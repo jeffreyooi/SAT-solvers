@@ -41,13 +41,38 @@ public class Clause implements Comparable<Clause> {
         return false;
     }
 
-    public Literal getLiteral(String literalName) {
+    public Variable getImpliedVariable(Map<String, Boolean> currentAssignment) {
+        // Can only imply if there's only 1 literal without assignments
+        if ((literals.size() - currentAssignment.size()) != 1) {
+            return null;
+        }
+        boolean isSatisfied = false;
+        Literal unassignedLiteral = null;
         for (Literal l : literals) {
-            if (l.getName().equals(literalName)) {
-                return l;
+            if (currentAssignment.containsKey(l.getName())) {
+                boolean assignment = currentAssignment.get(l.getName());
+                if (l.isSatisfied(assignment)) {
+                    isSatisfied = true;
+                }
+            } else {
+                unassignedLiteral = l;
             }
         }
-        return null;
+
+        if (unassignedLiteral == null) {
+            return null;
+        }
+        if (!unassignedLiteral.isPositive()) {
+            isSatisfied = !isSatisfied;
+        }
+        return new Variable(unassignedLiteral.getName(), !isSatisfied);
+    }
+
+    public Literal getLiteral(String literalName) {
+        return literals.stream()
+                .filter(l -> l.getName().equals(literalName))
+                .findFirst()
+                .orElse(null);
     }
 
     public int getNumberOfLiterals() {
@@ -61,5 +86,15 @@ public class Clause implements Comparable<Clause> {
      */
     public int compareTo(Clause other) {
         return literals.size() - other.literals.size();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        literals.forEach(l -> sb.append(l.getName()).append(", "));
+        sb.replace(sb.length() - 2, sb.length(), "");
+
+        return sb.toString();
     }
 }

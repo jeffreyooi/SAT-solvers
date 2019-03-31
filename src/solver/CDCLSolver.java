@@ -1,14 +1,14 @@
 package solver;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import datastruct.Clause;
 import datastruct.ImplicationGraph;
 import datastruct.Literal;
+import datastruct.Node;
 import datastruct.Variable;
 import db.ClauseDB;
 
@@ -21,6 +21,8 @@ public class CDCLSolver implements ISolver {
     private ClauseDB db;
 
     private int decisionLevel;
+
+    private Clause conflictedClause;
 
     public CDCLSolver(ClauseDB db) {
         this.db = db;
@@ -36,10 +38,9 @@ public class CDCLSolver implements ISolver {
     public String evaluate() {
         // if(unitPropagation(graph, variable to apply unit resolution) == conflict
         // return unsat
-        if (!unitPropagation(db.getAllClauses())) {
+        if (!unitPropagation(db.getAllClauses(), null)) {
             return UNSAT;
         }
-
 
         // dl <- 0
         decisionLevel = 0;
@@ -47,7 +48,7 @@ public class CDCLSolver implements ISolver {
         // while (not allVariablesAssigned(graph, variable to apply unit resolution)
         while (!allVariablesAssigned()) {
             // pick branching variable(graph, variable)
-            Variable decision = pickBranchingVariable(false);
+            Variable decision = pickBranchingVariable(true);
             if (decision == null) {
                 return UNSAT;
             }
@@ -65,11 +66,19 @@ public class CDCLSolver implements ISolver {
                     // else backtrack(beta), decision level = beta
 
             // Propagation does not result in any conflict, continue
-            if (unitPropagation(db.getAllClauses())) {
+
+            if (implicationPropagation(db.getAllClauses(), decision)) {
                 continue;
             }
 
+            // TODO: analyze conflict
+            int backtrackLevel = conflictAnalysis();
 
+            if (backtrackLevel == -1) {
+                return UNSAT;
+            }
+
+            backtrack(backtrackLevel);
         }
 
         return graph.assignmentsToString();
@@ -78,39 +87,49 @@ public class CDCLSolver implements ISolver {
     /**
      * Simplify clauses using unit
      */
-
-    private boolean unitPropagation(Set<Clause> clauses) {
-        List<Clause> clauseList = new ArrayList<>(clauses);
-        clauseList.sort((o1, o2) -> {
-            int num1 = o1.getNumberOfLiterals();
-            int num2 = o2.getNumberOfLiterals();
-            return Integer.compare(num1, num2);
-        });
-
+    private boolean unitPropagation(Set<Clause> clauses, Variable latestDecision) {
         // For every clause, choose a variable, assign, then check if we can imply / force assignment
         // on other literals in clauses
-        for (Clause c : clauseList) {
-            for (Literal l : c.getLiterals()) {
-                if (graph.getAssignment(l.getName()) == null) {
-                    continue;
-                }
-                Variable v = new Variable(l.getName(), l.isPositive());
-                graph.addDecisionNode(v, decisionLevel);
-                ++decisionLevel;
-                // After adding a decision of unit clause, propagate the result and add implications
-                // (clauses that contain literal that will be forced to a value)
-                if (!implicationPropagation(clauses, v)) {
-                    return false;
-                }
+        for (Clause c : clauses) {
+            Map<String, Boolean> assignment = graph.getAssignmentForClause(c);
+            // Only can imply if there's only 1 literal unassigned in a clause
+            Variable v = c.getImpliedVariable(assignment);
+            if (v == null) {
+                continue;
+            }
+            graph.addDecisionNode(v, decisionLevel);
+            if (latestDecision != null) {
+                graph.addEdge(latestDecision, v);
+            }
+            if (!implicationPropagation(clauses, v)) {
+                return false;
             }
         }
 
         return true;
     }
 
-    // TODO fix bug here
+    private boolean checkClauseSatisfiable(Clause clause) {
+        boolean sat = true;
+        for (Literal l : clause.getLiterals()) {
+            Boolean assignment = graph.getAssignment(l.getName());
+            if (assignment == null) {
+                continue;
+            }
+
+            if (!l.isSatisfied(assignment)) {
+                sat = false;
+                break;
+            }
+        }
+        return sat;
+    }
+
     private boolean implicationPropagation(Set<Clause> clauses, Variable decision) {
-        if (graph.hasConflict(clauses)) {
+        Clause conflicted = graph.getConflictedClause(clauses);
+        if (conflicted != null) {
+            conflictedClause = conflicted;
+            graph.setConflictedNode(decision, decisionLevel);
             return false;
         }
 
@@ -140,13 +159,18 @@ public class CDCLSolver implements ISolver {
             }
 
             Literal lit = literalsWithoutAssignment.get(0);
-            Variable v = new Variable(lit.getName(), lit.isPositive());
+            boolean sat = checkClauseSatisfiable(c);
+            boolean assign = false;
+            if (!sat) {
+                assign = lit.isPositive();
+            }
+            Variable v = new Variable(lit.getName(), assign);
             graph.addImplicationNode(decision, v, decisionLevel);
-            ++decisionLevel;
             // Recursively check until we cannot imply / force any other values
             if (!implicationPropagation(clauses, v)) {
                 return false;
             }
+            ++decisionLevel;
         }
 
         return true;
@@ -161,9 +185,22 @@ public class CDCLSolver implements ISolver {
 
     /**
      * Analyze most recent conflict and learning a new clause from the conflict and returns the
-     * decision level to backtrack to
+     * decision level to backtrack to. If unable to analyze, return -1 to indicate that it is unsat
      */
     private int conflictAnalysis() {
+        if (conflictedClause == null) {
+            throw new NullPointerException("conflictedClause is null");
+        }
+
+        Node conflictedNode = graph.getConflictedNode();
+        if (conflictedNode == null) {
+            throw new NullPointerException("conflictedNode is null");
+        }
+
+        int conflictDecisionLevel = conflictedNode.getDecisionLevel();
+
+
+
         return -1;
     }
 

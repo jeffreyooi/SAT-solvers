@@ -22,7 +22,7 @@ public class ImplicationGraph {
     private Map<String, Boolean> assignedVariables;
     private Map<String, Node> assignedNodes;
 
-    private Map<Clause, Boolean> satisfiedClauses;
+    private Node conflictedNode;
 
     public ImplicationGraph() {
         adjacencyList = new HashMap<>();
@@ -58,10 +58,25 @@ public class ImplicationGraph {
             return;
         }
         adjacencyList.get(fromNode).add(node);
+        adjacencyList.put(node, new ArrayList<>());
 
         unassignedVariables.remove(to.getName());
         assignedVariables.put(to.getName(), to.getAssignment());
         assignedNodes.put(to.getName(), node);
+
+        addEdge(from, to);
+    }
+
+    public void setConflictedNode(Variable var, int decisionLevel) {
+        conflictedNode = new Node(var, decisionLevel);
+    }
+
+    public Node getConflictedNode() {
+        return conflictedNode;
+    }
+
+    public void removeConflictedNode() {
+        conflictedNode = null;
     }
 
     public void addNode(Node node) {
@@ -87,22 +102,28 @@ public class ImplicationGraph {
         adjacencyList.remove(node);
     }
 
-    public void addEdge(Node source, Node destination) {
-        Pair<Node, Node> edge = new Pair<>(source, destination);
+    public void addEdge(Variable from, Variable to) {
+        Node fromNode = assignedNodes.get(from.getName());
+        Node toNode = assignedNodes.get(to.getName());
+
+        Pair<Node, Node> edge = new Pair<>(fromNode, toNode);
         if (edgeList.contains(edge)) {
             return;
         }
         edgeList.add(edge);
-        adjacencyList.get(source).add(destination);
+        adjacencyList.get(fromNode).add(toNode);
     }
 
-    public void removeEdge(Node source, Node destination) {
-        Pair<Node, Node> edge = new Pair<>(source, destination);
+    public void removeEdge(Variable from, Variable to) {
+        Node fromNode = assignedNodes.get(from.getName());
+        Node toNode = assignedNodes.get(to.getName());
+
+        Pair<Node, Node> edge = new Pair<>(fromNode, toNode);
         if (!edgeList.contains(edge)) {
             return;
         }
         edgeList.remove(edge);
-        adjacencyList.get(source).remove(destination);
+        adjacencyList.get(fromNode).remove(toNode);
     }
 
     public boolean hasUnassignedVariable() {
@@ -119,7 +140,7 @@ public class ImplicationGraph {
         return new Variable(variableNames[0], assignment);
     }
 
-    public boolean hasConflict(Set<Clause> clauses) {
+    public Clause getConflictedClause(Set<Clause> clauses) {
         for (Clause c : clauses) {
             boolean conflicted = true;
 
@@ -132,10 +153,22 @@ public class ImplicationGraph {
                 }
             }
             if (conflicted) {
-                return true;
+                return c;
             }
         }
-        return false;
+        return null;
+    }
+
+    public HashMap<String, Boolean> getAssignmentForClause(Clause c) {
+        HashMap<String, Boolean> result = new HashMap<>();
+        for (Literal l : c.getLiterals()) {
+            Boolean assignment = assignedVariables.get(l.getName());
+            if (assignment == null) {
+                continue;
+            }
+            result.put(l.getName(), assignment);
+        }
+        return result;
     }
 
     public Boolean getAssignment(String variableName) {
