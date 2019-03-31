@@ -26,4 +26,9 @@ public class Node {
         Node other = (Node) obj;
         return this.variable == other.variable && this.decisionLevel == other.decisionLevel;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Decision level: %d Variable: %s", decisionLevel, variable.toString());
+    }
 }

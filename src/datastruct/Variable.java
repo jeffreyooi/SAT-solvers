@@ -27,4 +27,9 @@ public class Variable {
     public void setAssignment(boolean assignment) {
         this.assignment = assignment;
     }
+
+    @Override
+    public String toString() {
+        return variableName + " " + assignment;
+    }
 }

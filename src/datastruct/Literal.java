@@ -38,4 +38,9 @@ public class Literal {
         Literal other = (Literal) obj;
         return this.name.equals(other.name) && this.isPositive == other.isPositive;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s%s", isPositive ? "" : "-", name);
+    }
 }
