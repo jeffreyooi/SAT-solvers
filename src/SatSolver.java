@@ -12,7 +12,7 @@ public class SatSolver {
     }
 
     private void solve() {
-        String fileContent = FileUtil.getFileString("C:\\Users\\Jeffrey\\Desktop\\Projects\\CS4244\\cnf\\cnf-2.cnf");
+        String fileContent = FileUtil.getFileString("C:\\Users\\Jeffrey\\Desktop\\Projects\\CS4244\\cnf\\complex.cnf");
 
         if (fileContent == null) {
             System.out.println("File does not exist.");
