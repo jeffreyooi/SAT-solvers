@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import util.SolverUtil;
+
 public class ImplicationGraph {
     /**
      * Map nodes that links to other nodes.
@@ -38,33 +40,24 @@ public class ImplicationGraph {
 
     public void addDecisionNode(Variable v, int decisionLevel) {
         Node node = new Node(v, decisionLevel);
-        if (adjacencyList.containsKey(node)) {
-            return;
-        }
-
-        adjacencyList.put(node, new ArrayList<>());
-        unassignedVariables.remove(v.getName());
-        assignedVariables.put(v.getName(), v.getAssignment());
-        assignedNodes.put(v.getName(), node);
+        addNode(node);
     }
 
-    public void addImplicationNode(Variable from, Variable to, int decisionLevel) {
-        if (!assignedNodes.containsKey(from.getName())) {
-            return;
-        }
-        Node fromNode = assignedNodes.get(from.getName());
-        Node node = new Node(to, decisionLevel);
-        if (adjacencyList.get(fromNode).contains(node)) {
-            return;
-        }
-        adjacencyList.get(fromNode).add(node);
-        adjacencyList.put(node, new ArrayList<>());
+    public void addImplicationNode(Variable impliedVariable, int decisionLevel, Clause antecedent) {
+        Node impliedNode = new Node(impliedVariable, decisionLevel);
+        adjacencyList.put(impliedNode, new ArrayList<>());
+        unassignedVariables.remove(impliedVariable.getName());
+        assignedVariables.put(impliedVariable.getName(), impliedVariable.getAssignment());
+        assignedNodes.put(impliedVariable.getName(), impliedNode);
 
-        unassignedVariables.remove(to.getName());
-        assignedVariables.put(to.getName(), to.getAssignment());
-        assignedNodes.put(to.getName(), node);
-
-        addEdge(from, to);
+        Set<Literal> literals = antecedent.getLiterals();
+        // Link all assignments of literals in the clause to the implied node
+        literals.stream().filter(l -> !l.getName().equals(impliedVariable.getName())).forEach(l -> {
+            Node antecedentNode = assignedNodes.get(l.getName());
+            if (antecedentNode != null) {
+                addEdge(antecedentNode, impliedNode);
+            }
+        });
     }
 
     public void setConflictedNode(Variable var, int decisionLevel) {
@@ -84,7 +77,11 @@ public class ImplicationGraph {
             return;
         }
 
+        Variable v = node.getVariable();
         adjacencyList.put(node, new ArrayList<>());
+        unassignedVariables.remove(v.getName());
+        assignedVariables.put(v.getName(), v.getAssignment());
+        assignedNodes.put(v.getName(), node);
     }
 
     public void removeNode(Node node) {
@@ -106,12 +103,18 @@ public class ImplicationGraph {
         Node fromNode = assignedNodes.get(from.getName());
         Node toNode = assignedNodes.get(to.getName());
 
-        Pair<Node, Node> edge = new Pair<>(fromNode, toNode);
+        addEdge(fromNode, toNode);
+    }
+
+    private void addEdge(Node from, Node to) {
+        Pair<Node, Node> edge = new Pair<>(from, to);
         if (edgeList.contains(edge)) {
             return;
         }
         edgeList.add(edge);
-        adjacencyList.get(fromNode).add(toNode);
+        if (!adjacencyList.get(from).contains(to)) {
+            adjacencyList.get(from).add(to);
+        }
     }
 
     public void removeEdge(Variable from, Variable to) {
