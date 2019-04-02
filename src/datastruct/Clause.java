@@ -92,7 +92,7 @@ public class Clause implements Comparable<Clause> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        literals.forEach(l -> sb.append(l.getName()).append(", "));
+        literals.forEach(l -> sb.append(String.format("%s%s", l.isPositive() ? "" : "-", l.getName())).append(", "));
         sb.replace(sb.length() - 2, sb.length(), "");
 
         return sb.toString();
