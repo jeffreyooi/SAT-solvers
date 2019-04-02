@@ -11,6 +11,7 @@ import datastruct.Literal;
 import datastruct.Node;
 import datastruct.Variable;
 import db.ClauseDB;
+import util.SolverUtil;
 
 public class CDCLSolver implements ISolver {
 
@@ -146,12 +147,13 @@ public class CDCLSolver implements ISolver {
             }
 
             List<Literal> literalsWithoutAssignment = new ArrayList<>();
-            for (Literal lit : c.getLiterals()) {
-                if (graph.getAssignment(lit.getName()) != null) {
-                    continue;
+
+            c.getLiterals().forEach(lit -> {
+                if (graph.getAssignment(lit.getName()) == null) {
+                    literalsWithoutAssignment.add(lit);
                 }
-                literalsWithoutAssignment.add(lit);
-            }
+            });
+
 
             // If there is only 1 left, we can force the value, else continue
             if (literalsWithoutAssignment.size() != 1) {
@@ -164,13 +166,13 @@ public class CDCLSolver implements ISolver {
             if (!sat) {
                 assign = lit.isPositive();
             }
-            Variable v = new Variable(lit.getName(), assign);
-            graph.addImplicationNode(decision, v, decisionLevel);
+            Variable impliedVariable = new Variable(lit.getName(), assign);
+            graph.addImplicationNode(impliedVariable, decisionLevel, c);
+
             // Recursively check until we cannot imply / force any other values
-            if (!implicationPropagation(clauses, v)) {
+            if (!implicationPropagation(clauses, impliedVariable)) {
                 return false;
             }
-            ++decisionLevel;
         }
 
         return true;
@@ -198,8 +200,6 @@ public class CDCLSolver implements ISolver {
         }
 
         int conflictDecisionLevel = conflictedNode.getDecisionLevel();
-
-
 
         return -1;
     }
