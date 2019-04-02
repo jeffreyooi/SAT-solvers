@@ -220,7 +220,10 @@ public class CDCLSolver implements ISolver {
      * Backtracks to the decision level computed by conflict analysis
      */
     private void backtrack(int decisionLevel) {
-
+        while (history.size() > decisionLevel) {
+            history.pop();
+        }
+        graph = history.peek();
     }
 
     private boolean allVariablesAssigned() {
