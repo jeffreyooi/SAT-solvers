@@ -1,9 +1,12 @@
 package solver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import datastruct.Clause;
 import datastruct.ImplicationGraph;
@@ -25,6 +28,8 @@ public class CDCLSolver implements ISolver {
 
     private Clause conflictedClause;
 
+    private Stack<ImplicationGraph> history;
+
     public CDCLSolver(ClauseDB db) {
         this.db = db;
         initialize();
@@ -34,6 +39,8 @@ public class CDCLSolver implements ISolver {
         graph = new ImplicationGraph();
         // Set everything as unassigned in implication graph
         graph.initialize(db.getAllClauses());
+        history = new Stack<>();
+        history.push(graph.copy());
     }
 
     public String evaluate() {
@@ -60,6 +67,8 @@ public class CDCLSolver implements ISolver {
             // Store decision
             // v <- v union {assignment, variable}
             graph.addDecisionNode(decision, decisionLevel);
+
+            history.push(graph.copy());
 
             // if unit propagation(graph, variable) == conflict
                 // beta (decisionLevel to backtrack to) = conflict analysis
@@ -100,7 +109,7 @@ public class CDCLSolver implements ISolver {
             }
             graph.addDecisionNode(v, decisionLevel);
             if (latestDecision != null) {
-                graph.addEdge(latestDecision, v);
+                graph.addEdge(latestDecision, v, c);
             }
             if (!implicationPropagation(clauses, v)) {
                 return false;
@@ -201,7 +210,10 @@ public class CDCLSolver implements ISolver {
 
         int conflictDecisionLevel = conflictedNode.getDecisionLevel();
 
-        return -1;
+        int assertionLevel = -1;
+
+
+        return assertionLevel;
     }
 
     /**

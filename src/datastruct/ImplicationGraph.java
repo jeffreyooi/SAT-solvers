@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import util.SolverUtil;
-
 public class ImplicationGraph {
     /**
      * Map nodes that links to other nodes.
@@ -19,6 +17,7 @@ public class ImplicationGraph {
      * List of edges. Each element is a pair of source to destination node.
      */
     private List<Pair<Node, Node>> edgeList;
+    private Map<Pair<Node, Node>, Clause> edgeMap;
 
     private Set<String> unassignedVariables;
     private Map<String, Boolean> assignedVariables;
@@ -29,9 +28,24 @@ public class ImplicationGraph {
     public ImplicationGraph() {
         adjacencyList = new HashMap<>();
         edgeList = new ArrayList<>();
+        edgeMap = new HashMap<>();
         unassignedVariables = new HashSet<>();
         assignedVariables = new HashMap<>();
         assignedNodes = new HashMap<>();
+    }
+
+    private ImplicationGraph(ImplicationGraph other) {
+        adjacencyList = new HashMap<>(other.adjacencyList);
+        edgeList = new ArrayList<>(other.edgeList);
+        edgeMap = new HashMap<>(other.edgeMap);
+        unassignedVariables = new HashSet<>(other.unassignedVariables);
+        assignedVariables = new HashMap<>(other.assignedVariables);
+        assignedNodes = new HashMap<>(other.assignedNodes);
+        conflictedNode = other.conflictedNode != null ? new Node(other.conflictedNode) : null;
+    }
+
+    public ImplicationGraph copy() {
+        return new ImplicationGraph(this);
     }
 
     public void initialize(Set<Clause> clauses) {
@@ -55,7 +69,7 @@ public class ImplicationGraph {
         literals.stream().filter(l -> !l.getName().equals(impliedVariable.getName())).forEach(l -> {
             Node antecedentNode = assignedNodes.get(l.getName());
             if (antecedentNode != null) {
-                addEdge(antecedentNode, impliedNode);
+                addEdge(antecedentNode, impliedNode, antecedent);
             }
         });
     }
@@ -96,25 +110,41 @@ public class ImplicationGraph {
             }
         }
 
+        for (Pair<Node, Node> edge : edgeMap.keySet()) {
+            if (edge.getFirst() == node || edge.getSecond() == node) {
+                edgeMap.remove(edge);
+            }
+        }
+
         adjacencyList.remove(node);
     }
 
-    public void addEdge(Variable from, Variable to) {
+    public void addEdge(Variable from, Variable to, Clause clause) {
         Node fromNode = assignedNodes.get(from.getName());
         Node toNode = assignedNodes.get(to.getName());
 
-        addEdge(fromNode, toNode);
+        addEdge(fromNode, toNode, clause);
     }
 
-    private void addEdge(Node from, Node to) {
+    private void addEdge(Node from, Node to, Clause clause) {
         Pair<Node, Node> edge = new Pair<>(from, to);
         if (edgeList.contains(edge)) {
             return;
         }
         edgeList.add(edge);
+        if (edgeMap.containsKey(edge)) {
+            return;
+        }
+        edgeMap.put(edge, clause);
         if (!adjacencyList.get(from).contains(to)) {
             adjacencyList.get(from).add(to);
         }
+    }
+
+    public Clause analyzeConflict(int conflictDecisionLevel) {
+        Set<Clause> analyzedClause = new HashSet<>();
+
+        return null;
     }
 
     public void removeEdge(Variable from, Variable to) {
@@ -126,6 +156,7 @@ public class ImplicationGraph {
             return;
         }
         edgeList.remove(edge);
+        edgeMap.remove(edge);
         adjacencyList.get(fromNode).remove(toNode);
     }
 

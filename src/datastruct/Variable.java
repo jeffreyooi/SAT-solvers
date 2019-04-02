@@ -16,6 +16,11 @@ public class Variable {
         this.assignment = assignment;
     }
 
+    public Variable(Variable other) {
+        variableName = other.variableName;
+        assignment = other.assignment;
+    }
+
     public String getName() {
         return variableName;
     }
