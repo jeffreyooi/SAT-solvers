@@ -29,7 +29,7 @@ public class Node {
         }
 
         Node other = (Node) obj;
-        return this.variable == other.variable && this.decisionLevel == other.decisionLevel;
+        return this.variable.equals(other.variable) && this.decisionLevel == other.decisionLevel;
     }
 
     @Override

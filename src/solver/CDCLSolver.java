@@ -78,7 +78,6 @@ public class CDCLSolver implements ISolver {
                 continue;
             }
 
-            // TODO: analyze conflict
             int backtrackLevel = conflictAnalysis();
 
             if (backtrackLevel == -1) {
@@ -207,14 +206,11 @@ public class CDCLSolver implements ISolver {
 
         int conflictDecisionLevel = conflictedNode.getDecisionLevel();
 
-        Clause learntClause = graph.analyzeConflict(conflictedClause, decisionLevel);
+        Clause learntClause = graph.analyzeConflict(conflictedClause, conflictDecisionLevel);
 
         db.insertClause(learntClause);
 
-        int assertionLevel = -1;
-
-
-        return assertionLevel;
+        return graph.getBacktrackLevel();
     }
 
     /**

@@ -37,4 +37,13 @@ public class Variable {
     public String toString() {
         return variableName + " " + assignment;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Variable)) {
+            return false;
+        }
+        Variable other = (Variable) obj;
+        return this.variableName.equals(other.variableName) && this.assignment == other.assignment;
+    }
 }

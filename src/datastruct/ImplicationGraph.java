@@ -3,10 +3,8 @@ package datastruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import util.SolverUtil;
@@ -28,12 +26,15 @@ public class ImplicationGraph {
 
     private Node conflictedNode;
 
+    private int backtrackLevel;
+
     public ImplicationGraph() {
         adjacencyList = new HashMap<>();
         edgeMap = new HashMap<>();
         unassignedVariables = new HashSet<>();
         assignedVariables = new HashMap<>();
         assignedNodes = new HashMap<>();
+        backtrackLevel = -1;
     }
 
     private ImplicationGraph(ImplicationGraph other) {
@@ -43,6 +44,7 @@ public class ImplicationGraph {
         assignedVariables = new HashMap<>(other.assignedVariables);
         assignedNodes = new HashMap<>(other.assignedNodes);
         conflictedNode = other.conflictedNode != null ? new Node(other.conflictedNode) : null;
+        backtrackLevel = other.backtrackLevel;
     }
 
     public ImplicationGraph copy() {
@@ -102,6 +104,10 @@ public class ImplicationGraph {
         addEdge(fromNode, toNode, clause);
     }
 
+    public int getBacktrackLevel() {
+        return backtrackLevel;
+    }
+
     private void addEdge(Node from, Node to, Clause clause) {
         Pair<Node, Node> edge = new Pair<>(from, to);
         if (edgeMap.containsKey(edge)) {
@@ -119,13 +125,17 @@ public class ImplicationGraph {
         Clause learntClause = new Clause(conflictedClause);
 
         Set<Clause> clausesToAnalyze = new HashSet<>();
+        Set<String> visitedVariables = new HashSet<>();
 
-        Queue<Node> nodesQueue = new LinkedList<>();
-        Set<Node> visitedNode = new HashSet<>();
-        nodesQueue.offer(conflictedNode);
-        
-        while (!nodesQueue.isEmpty()) {
-            Node nodeToLookAt = nodesQueue.poll();
+        List<Node> nodesList = new ArrayList<>();
+
+        backtrackLevel = decisionLevel;
+
+        nodesList.add(conflictedNode);
+        while (!nodesList.isEmpty()) {
+            Node nodeToLookAt = nodesList.get(0);
+            nodesList.remove(nodeToLookAt);
+
             for (Pair<Node, Node> key : edgeMap.keySet()) {
                 Clause clause = edgeMap.get(key);
                 if (nodeToLookAt.getDecisionLevel() == decisionLevel
@@ -135,18 +145,23 @@ public class ImplicationGraph {
                 }
             }
 
-            visitedNode.add(nodeToLookAt);
+            visitedVariables.add(nodeToLookAt.getVariable().getName());
+
+            if (clausesToAnalyze.isEmpty()) {
+                backtrackLevel = nodeToLookAt.getDecisionLevel();
+            }
 
             for (Clause clause : clausesToAnalyze) {
                 for (Literal l : clause.getLiterals()) {
-                    if (!visitedNode.contains(assignedNodes.get(l.getName()))) {
-                        nodesQueue.offer(assignedNodes.get(l.getName()));
+                    if (!visitedVariables.contains(l.getName())) {
+                        nodesList.add(assignedNodes.get(l.getName()));
                     }
                 }
                 learntClause = SolverUtil.performResolution(learntClause, clause);
                 analyzedClauses.add(clause);
             }
             clausesToAnalyze.clear();
+            nodesList.sort((Node one, Node two) -> Integer.compare(one.getDecisionLevel(), two.getDecisionLevel()) * -1);
         }
 
         return learntClause;
