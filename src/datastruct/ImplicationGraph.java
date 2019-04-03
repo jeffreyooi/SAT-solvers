@@ -3,9 +3,13 @@ package datastruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+
+import util.SolverUtil;
 
 public class ImplicationGraph {
     /**
@@ -16,7 +20,6 @@ public class ImplicationGraph {
     /**
      * List of edges. Each element is a pair of source to destination node.
      */
-    private List<Pair<Node, Node>> edgeList;
     private Map<Pair<Node, Node>, Clause> edgeMap;
 
     private Set<String> unassignedVariables;
@@ -27,7 +30,6 @@ public class ImplicationGraph {
 
     public ImplicationGraph() {
         adjacencyList = new HashMap<>();
-        edgeList = new ArrayList<>();
         edgeMap = new HashMap<>();
         unassignedVariables = new HashSet<>();
         assignedVariables = new HashMap<>();
@@ -36,7 +38,6 @@ public class ImplicationGraph {
 
     private ImplicationGraph(ImplicationGraph other) {
         adjacencyList = new HashMap<>(other.adjacencyList);
-        edgeList = new ArrayList<>(other.edgeList);
         edgeMap = new HashMap<>(other.edgeMap);
         unassignedVariables = new HashSet<>(other.unassignedVariables);
         assignedVariables = new HashMap<>(other.assignedVariables);
@@ -82,11 +83,7 @@ public class ImplicationGraph {
         return conflictedNode;
     }
 
-    public void removeConflictedNode() {
-        conflictedNode = null;
-    }
-
-    public void addNode(Node node) {
+    private void addNode(Node node) {
         if (adjacencyList.containsKey(node)) {
             return;
         }
@@ -98,27 +95,6 @@ public class ImplicationGraph {
         assignedNodes.put(v.getName(), node);
     }
 
-    public void removeNode(Node node) {
-        if (!adjacencyList.containsKey(node)) {
-            return;
-        }
-
-        // If node is a source or destination of an edge, remove
-        for (Pair<Node, Node> edge : edgeList) {
-            if (edge.getFirst() == node || edge.getSecond() == node) {
-                edgeList.remove(edge);
-            }
-        }
-
-        for (Pair<Node, Node> edge : edgeMap.keySet()) {
-            if (edge.getFirst() == node || edge.getSecond() == node) {
-                edgeMap.remove(edge);
-            }
-        }
-
-        adjacencyList.remove(node);
-    }
-
     public void addEdge(Variable from, Variable to, Clause clause) {
         Node fromNode = assignedNodes.get(from.getName());
         Node toNode = assignedNodes.get(to.getName());
@@ -128,10 +104,6 @@ public class ImplicationGraph {
 
     private void addEdge(Node from, Node to, Clause clause) {
         Pair<Node, Node> edge = new Pair<>(from, to);
-        if (edgeList.contains(edge)) {
-            return;
-        }
-        edgeList.add(edge);
         if (edgeMap.containsKey(edge)) {
             return;
         }
@@ -141,26 +113,46 @@ public class ImplicationGraph {
         }
     }
 
-    public Clause analyzeConflict(int conflictDecisionLevel) {
-        Set<Clause> analyzedClause = new HashSet<>();
+    public Clause analyzeConflict(Clause conflictedClause, int decisionLevel) {
+        Set<Clause> analyzedClauses = new HashSet<>();
 
-        return null;
-    }
+        Clause learntClause = new Clause(conflictedClause);
 
-    public void removeEdge(Variable from, Variable to) {
-        Node fromNode = assignedNodes.get(from.getName());
-        Node toNode = assignedNodes.get(to.getName());
+        Set<Clause> clausesToAnalyze = new HashSet<>();
 
-        Pair<Node, Node> edge = new Pair<>(fromNode, toNode);
-        if (!edgeList.contains(edge)) {
-            return;
+        Queue<Node> nodesQueue = new LinkedList<>();
+        Set<Node> visitedNode = new HashSet<>();
+        nodesQueue.offer(conflictedNode);
+        
+        while (!nodesQueue.isEmpty()) {
+            Node nodeToLookAt = nodesQueue.poll();
+            for (Pair<Node, Node> key : edgeMap.keySet()) {
+                Clause clause = edgeMap.get(key);
+                if (nodeToLookAt.getDecisionLevel() == decisionLevel
+                        && key.getSecond().equals(nodeToLookAt)
+                        && !analyzedClauses.contains(clause)) {
+                    clausesToAnalyze.add(clause);
+                }
+            }
+
+            visitedNode.add(nodeToLookAt);
+
+            for (Clause clause : clausesToAnalyze) {
+                for (Literal l : clause.getLiterals()) {
+                    if (!visitedNode.contains(assignedNodes.get(l.getName()))) {
+                        nodesQueue.offer(assignedNodes.get(l.getName()));
+                    }
+                }
+                learntClause = SolverUtil.performResolution(learntClause, clause);
+                analyzedClauses.add(clause);
+            }
+            clausesToAnalyze.clear();
         }
-        edgeList.remove(edge);
-        edgeMap.remove(edge);
-        adjacencyList.get(fromNode).remove(toNode);
+
+        return learntClause;
     }
 
-    public boolean hasUnassignedVariable() {
+    private boolean hasUnassignedVariable() {
         return !unassignedVariables.isEmpty();
     }
 

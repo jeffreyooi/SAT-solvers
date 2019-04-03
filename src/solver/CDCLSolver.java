@@ -1,8 +1,6 @@
 package solver;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,7 +12,6 @@ import datastruct.Literal;
 import datastruct.Node;
 import datastruct.Variable;
 import db.ClauseDB;
-import util.SolverUtil;
 
 public class CDCLSolver implements ISolver {
 
@@ -40,7 +37,6 @@ public class CDCLSolver implements ISolver {
         // Set everything as unassigned in implication graph
         graph.initialize(db.getAllClauses());
         history = new Stack<>();
-        history.push(graph.copy());
     }
 
     public String evaluate() {
@@ -52,6 +48,7 @@ public class CDCLSolver implements ISolver {
 
         // dl <- 0
         decisionLevel = 0;
+        history.push(graph.copy());
 
         // while (not allVariablesAssigned(graph, variable to apply unit resolution)
         while (!allVariablesAssigned()) {
@@ -209,6 +206,10 @@ public class CDCLSolver implements ISolver {
         }
 
         int conflictDecisionLevel = conflictedNode.getDecisionLevel();
+
+        Clause learntClause = graph.analyzeConflict(conflictedClause, decisionLevel);
+
+        db.insertClause(learntClause);
 
         int assertionLevel = -1;
 

@@ -22,7 +22,7 @@ public class SolverUtil {
         return subset;
     }
 
-    private Clause performResolution(Clause left, Clause right) {
+    public static Clause performResolution(Clause left, Clause right) {
         if (left == null && right == null) {
             return null;
         }
