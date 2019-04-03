@@ -14,6 +14,10 @@ public class Clause implements Comparable<Clause> {
         literals = new HashSet<>();
     }
 
+    Clause(Clause other) {
+        this.literals = new HashSet<>(other.literals);
+    }
+
     public Set<Literal> getLiterals() {
         return literals;
     }
