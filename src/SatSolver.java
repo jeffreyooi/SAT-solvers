@@ -12,6 +12,7 @@ import solver.NClauseSolver;
 import solver.RandomSolver;
 import solver.TwoClauseSolver;
 import util.FileUtil;
+import util.SolverUtil;
 
 public class SatSolver {
 
@@ -81,12 +82,11 @@ public class SatSolver {
         if (solver == null) {
             return;
         }
+        long time = System.nanoTime();
         String result = solver.evaluate();
+        long totalTime = System.nanoTime() - time;
+        System.out.println("Total time: " + SolverUtil.millisecToString(totalTime));
         System.out.println(result);
-    }
-
-    public void reset() {
-        clauseDb.reset();
     }
 
     public static void main(String[] args) {

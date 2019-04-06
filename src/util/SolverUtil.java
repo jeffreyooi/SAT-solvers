@@ -48,4 +48,12 @@ public class SolverUtil {
 
         return resolutionClause;
     }
+
+    public static String millisecToString(long nanoTime) {
+        long millisec = nanoTime / 1000000;
+        long seconds = millisec / 1000;
+        long minute = seconds / 60;
+
+        return String.format("%02d:%02d:%03d", minute, seconds, millisec);
+    }
 }
