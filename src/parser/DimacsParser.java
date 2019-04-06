@@ -54,7 +54,7 @@ public class DimacsParser {
                 }
             }
             // Tricky: to catch certain cases where the clause is marked end by 0 but does not go to new line
-            String[] clauseStrings = s.trim().split("0");
+            String[] clauseStrings = s.trim().split("[ ][0]");
 
             for (String clauseString : clauseStrings) {
                 Clause clause = parseClause(clauseString);
@@ -77,7 +77,7 @@ public class DimacsParser {
      * @param line problem line of DIMACS file.
      */
     private boolean parseProblemLine(String line) {
-        String[] subStrings = line.trim().split(" ");
+        String[] subStrings = line.trim().split("[\\s]+");
 
         // If the number of substrings is not 4, the format is invalid.
         if (subStrings.length != 4) {
@@ -95,11 +95,11 @@ public class DimacsParser {
         }
     }
 
-    public static Clause parseClause(String line) {
+    private static Clause parseClause(String line) {
         // Trim whitespaces in front and back
         line = line.trim();
         // Split by spaces to get each literal
-        String[] literalStrings = line.split(" ");
+        String[] literalStrings = line.split("[\\s]+");
         if (literalStrings.length == 0) {
             return null;
         }
