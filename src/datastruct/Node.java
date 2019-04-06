@@ -9,12 +9,7 @@ public class Node {
         this.decisionLevel = decisionLevel;
     }
 
-    Node(Node other) {
-        variable = new Variable(other.variable);
-        decisionLevel = other.decisionLevel;
-    }
-
-    public Variable getVariable() {
+    Variable getVariable() {
         return variable;
     }
 

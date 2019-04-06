@@ -15,7 +15,7 @@ public class Clause implements Comparable<Clause> {
     }
 
     Clause(Clause other) {
-        this.literals = new HashSet<>(other.literals);
+        this.literals = other.literals != null ? new HashSet<>(other.literals) : new HashSet<>();
     }
 
     public Set<Literal> getLiterals() {
@@ -24,14 +24,6 @@ public class Clause implements Comparable<Clause> {
 
     public void addLiteral(Literal literal) {
         literals.add(literal);
-    }
-
-    public void addLiterals(Set<Literal> literals) {
-        this.literals.addAll(literals);
-    }
-
-    public void removeLiteral(Literal literal) {
-        literals.remove(literal);
     }
 
     public boolean isSatisfied(Map<String, Boolean> assignments) {
@@ -77,10 +69,6 @@ public class Clause implements Comparable<Clause> {
                 .filter(l -> l.getName().equals(literalName))
                 .findFirst()
                 .orElse(null);
-    }
-
-    public int getNumberOfLiterals() {
-        return literals.size();
     }
 
     /**

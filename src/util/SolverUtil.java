@@ -8,22 +8,9 @@ import java.util.Map;
 import java.util.Set;
 
 import datastruct.Clause;
-import datastruct.ImplicationGraph;
 import datastruct.Literal;
 
 public class SolverUtil {
-    public static List<Literal> getLiteralsWithoutAssignments(Clause c, ImplicationGraph g) {
-        List<Literal> subset = new ArrayList<>();
-
-        c.getLiterals().forEach(l -> {
-            if (g.getAssignment(l.getName()) == null) {
-                subset.add(l);
-            }
-        });
-
-        return subset;
-    }
-
     public static Clause performResolution(Clause left, Clause right) {
         if (left == null && right == null) {
             return null;

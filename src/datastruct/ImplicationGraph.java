@@ -31,19 +31,6 @@ public class ImplicationGraph {
         backtrackLevel = -1;
     }
 
-    private ImplicationGraph(ImplicationGraph other) {
-        edgeMap = new HashMap<>(other.edgeMap);
-        unassignedVariables = new HashSet<>(other.unassignedVariables);
-        assignedVariables = new HashMap<>(other.assignedVariables);
-        assignedNodes = new HashMap<>(other.assignedNodes);
-        conflictedNode = other.conflictedNode != null ? new Node(other.conflictedNode) : null;
-        backtrackLevel = other.backtrackLevel;
-    }
-
-    public ImplicationGraph copy() {
-        return new ImplicationGraph(this);
-    }
-
     public void initialize(Set<Clause> clauses) {
         clauses.forEach(c -> c.getLiterals().forEach(l -> unassignedVariables.add(l.getName())));
     }

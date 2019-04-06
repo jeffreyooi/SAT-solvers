@@ -12,7 +12,7 @@ public class SatSolver {
     }
 
     private void solve() {
-        String fileContent = FileUtil.getFileString("C:\\Users\\Jeffrey\\Desktop\\Projects\\CS4244\\cnf\\complex.cnf");
+        String fileContent = FileUtil.getFileString("C:\\Users\\Jeffrey\\Desktop\\Projects\\CS4244\\cnf\\quinn.cnf");
 
         if (fileContent == null) {
             System.out.println("File does not exist.");
@@ -32,8 +32,14 @@ public class SatSolver {
         System.out.println(result);
     }
 
+    public void reset() {
+        clauseDb.reset();
+    }
+
     public static void main(String[] args) {
-       SatSolver solver = new SatSolver();
-       solver.solve();
+        String filePath = args[0];
+        System.out.println(filePath);
+        SatSolver solver = new SatSolver();
+        solver.solve();
     }
 }

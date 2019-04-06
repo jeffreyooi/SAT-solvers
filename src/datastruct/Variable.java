@@ -7,25 +7,16 @@ public class Variable {
     private String variableName;
     private boolean assignment;
 
-    public Variable(String variableName) {
-        this.variableName = variableName;
-    }
-
     public Variable(String variableName, boolean assignment) {
         this.variableName = variableName;
         this.assignment = assignment;
-    }
-
-    public Variable(Variable other) {
-        variableName = other.variableName;
-        assignment = other.assignment;
     }
 
     public String getName() {
         return variableName;
     }
 
-    public boolean getAssignment() {
+    boolean getAssignment() {
         return assignment;
     }
 
