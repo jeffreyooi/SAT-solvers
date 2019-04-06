@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import config.Config;
 import datastruct.Clause;
 import datastruct.ImplicationGraph;
 import datastruct.Literal;
@@ -16,9 +17,9 @@ public class CDCLSolver implements ISolver {
 
     private static final String UNSAT = "UNSAT";
 
-    private ImplicationGraph graph;
+    ImplicationGraph graph;
 
-    private ClauseDB db;
+    ClauseDB db;
 
     private int decisionLevel;
 
@@ -48,7 +49,7 @@ public class CDCLSolver implements ISolver {
         // while (not allVariablesAssigned(graph, variable to apply unit resolution)
         while (!allVariablesAssigned()) {
             // pick branching variable(graph, variable)
-            Variable decision = pickBranchingVariable(true);
+            Variable decision = pickBranchingVariable();
             if (decision == null) {
                 return UNSAT;
             }
@@ -71,14 +72,16 @@ public class CDCLSolver implements ISolver {
                 continue;
             }
 
-            System.out.println("Decision made during conflict: " + decision);
-            System.out.println("Assignment when conflict:");
-            System.out.println(graph.assignmentsToString());
-            System.out.println(graph.edgesToString());
-            System.out.println();
+            if (Config.logging == Config.Logging.DEBUG) {
+                System.out.println("Decision made during conflict: " + decision);
+                System.out.println("Assignment when conflict:");
+                System.out.println(graph.assignmentsToString());
+                System.out.println(graph.edgesToString());
+                System.out.println();
 
-            System.out.println("Conflicting clause: " + conflictedClause.toString());
-            System.out.println("Conflicting assignment: " + graph.getConflictedNode());
+                System.out.println("Conflicting clause: " + conflictedClause.toString());
+                System.out.println("Conflicting assignment: " + graph.getConflictedNode());
+            }
 
             int backtrackLevel = conflictAnalysis();
 
@@ -120,7 +123,9 @@ public class CDCLSolver implements ISolver {
     }
 
     private boolean forceSatisfyClause(Clause clause) {
-        System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
+        if (Config.logging == Config.Logging.VERBOSE) {
+            System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
+        }
         Map<String, Boolean> assignment = graph.getAssignmentForClause(clause);
 
         List<Literal> unassignedLiterals = new ArrayList<>();
@@ -130,8 +135,10 @@ public class CDCLSolver implements ISolver {
             }
         }
         if (unassignedLiterals.size() != 1) {
-            for (String k : assignment.keySet()) {
-                System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+            if (Config.logging == Config.Logging.DEBUG) {
+                for (String k : assignment.keySet()) {
+                    System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+                }
             }
             throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
         }
@@ -142,9 +149,12 @@ public class CDCLSolver implements ISolver {
             v.setAssignment(true);
         }
         graph.addImplicationNode(v, decisionLevel, clause);
-        for (String k : assignment.keySet()) {
-            System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+        if (Config.logging != Config.Logging.NONE) {
+            for (String k : assignment.keySet()) {
+                System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+            }
         }
+
         System.out.println();
         return true;
     }
@@ -220,8 +230,8 @@ public class CDCLSolver implements ISolver {
     /**
      * Select a variable to assign and the respective value.
      */
-    private Variable pickBranchingVariable(boolean assignment) {
-        return graph.getNextUnassignedVariable(assignment);
+    protected Variable pickBranchingVariable() {
+        return graph.getNextUnassignedVariable(false);
     }
 
     /**

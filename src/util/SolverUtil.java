@@ -46,12 +46,6 @@ public class SolverUtil {
             }
         }
 
-        System.out.println(
-                String.format("Resolve %s with %s \n --> %s\n",
-                        left.toString(),
-                        right.toString(),
-                        resolutionClause.toString()));
-
         return resolutionClause;
     }
 }

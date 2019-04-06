@@ -1,12 +1,15 @@
 package datastruct;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
+import config.Config;
 import util.SolverUtil;
 
 public class ImplicationGraph {
@@ -155,7 +158,15 @@ public class ImplicationGraph {
                         nodesList.add(assignedNodes.get(l.getName()));
                     }
                 }
+                if (Config.logging == Config.Logging.DEBUG) {
+                    System.out.println(
+                            String.format("Resolve %s with %s \n",
+                                    learntClause.toString(), clause.toString()));
+                }
                 learntClause = SolverUtil.performResolution(learntClause, clause);
+                if (Config.logging == Config.Logging.DEBUG) {
+                    System.out.println(String.format("--> %s\n", learntClause.toString()));
+                }
                 analyzedClauses.add(clause);
             }
             clausesToAnalyze.clear();
@@ -194,14 +205,45 @@ public class ImplicationGraph {
         return !unassignedVariables.isEmpty();
     }
 
-    public Variable getNextUnassignedVariable(boolean assignment) {
+    public Variable getNextUnassignedVariable(boolean random) {
         if (!hasUnassignedVariable()) {
             return null;
         }
 
         String[] variableNames = new String[unassignedVariables.size()];
         unassignedVariables.toArray(variableNames);
-        return new Variable(variableNames[0], assignment);
+        int index = 0;
+        if (random) {
+            Random rand = new Random();
+            index = rand.nextInt(variableNames.length);
+        }
+        return new Variable(variableNames[index], true);
+    }
+
+    public Variable getNextUnassignedVariable(Map<String, Integer> literalCountMap) {
+        List<Pair<Integer, String>> unassignedLiteralCountList = new ArrayList<>();
+
+        List<String> unassignedMoreThanTwoClauseLiterals = new ArrayList<>();
+        for (String unassigned : unassignedVariables) {
+            if (!literalCountMap.containsKey(unassigned)) {
+                unassignedMoreThanTwoClauseLiterals.add(unassigned);
+                continue;
+            }
+            Pair<Integer, String> pair = new Pair<>(literalCountMap.get(unassigned), unassigned);
+            unassignedLiteralCountList.add(pair);
+        }
+
+        unassignedLiteralCountList.sort(
+                (Pair<Integer, String> first, Pair<Integer, String> second)
+                        -> first.getFirst().compareTo(second.getFirst()) * -1);
+
+        String selected;
+        if (!unassignedLiteralCountList.isEmpty()) {
+            selected = unassignedLiteralCountList.get(0).getSecond();
+        } else {
+            selected = unassignedMoreThanTwoClauseLiterals.get(0);
+        }
+        return new Variable(selected, true);
     }
 
     public Clause getConflictedClause(Set<Clause> clauses) {

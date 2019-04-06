@@ -15,11 +15,18 @@ public class Clause implements Comparable<Clause> {
     }
 
     Clause(Clause other) {
-        this.literals = other.literals != null ? new HashSet<>(other.literals) : new HashSet<>();
+        literals = new HashSet<>();
+        if (other.literals != null) {
+            literals.addAll(other.literals);
+        }
     }
 
     public Set<Literal> getLiterals() {
         return literals;
+    }
+
+    public int getNumberOfLiterals() {
+        return literals.size();
     }
 
     public void addLiteral(Literal literal) {
