@@ -4,6 +4,7 @@ public class Config {
     public enum Solver {
         CDCL_Chaff,
         CDCL_TwoClause,
+        CDCL_NClause,
         CDCL_Random,
     }
 

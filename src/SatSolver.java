@@ -1,4 +1,5 @@
 import static config.Config.Solver.CDCL_Chaff;
+import static config.Config.Solver.CDCL_NClause;
 import static config.Config.Solver.CDCL_Random;
 import static config.Config.Solver.CDCL_TwoClause;
 
@@ -7,6 +8,7 @@ import db.ClauseDB;
 import parser.DimacsParser;
 import solver.CDCLSolver;
 import solver.ISolver;
+import solver.NClauseSolver;
 import solver.RandomSolver;
 import solver.TwoClauseSolver;
 import util.FileUtil;
@@ -27,6 +29,8 @@ public class SatSolver {
             return CDCL_Chaff;
         } else if (strType.equals(CDCL_TwoClause.toString())) {
             return CDCL_TwoClause;
+        } else if (strType.equals(CDCL_NClause.toString())) {
+            return CDCL_NClause;
         } else if (strType.equals(Config.Solver.CDCL_Random.toString())) {
             return CDCL_Random;
         }
@@ -39,6 +43,8 @@ public class SatSolver {
                 return new CDCLSolver(clauseDb);
             case CDCL_TwoClause:
                 return new TwoClauseSolver(clauseDb);
+            case CDCL_NClause:
+                return new NClauseSolver(clauseDb);
             case CDCL_Random:
                 return new RandomSolver(clauseDb);
             default:
