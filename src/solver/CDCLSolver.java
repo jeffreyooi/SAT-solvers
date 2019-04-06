@@ -42,7 +42,7 @@ public class CDCLSolver implements ISolver {
     public String evaluate() {
         // if(unitPropagation(graph, variable to apply unit resolution) == conflict
         // return unsat
-        if (!unitPropagation(db.getAllClauses(), null)) {
+        if (!unitPropagation(db.getAllClauses())) {
             return UNSAT;
         }
 
@@ -95,7 +95,10 @@ public class CDCLSolver implements ISolver {
 
             backtrack(backtrackLevel);
 
-            if (!unitPropagation(db.getAllClauses(), null)) {
+//            if (!unitPropagation(db.getAllClauses())) {
+//                return UNSAT;
+//            }
+            if (!forceSatisfyClause(db.getLastLearntClause(), db.getAllClauses())) {
                 return UNSAT;
             }
             db.clearLastLearntClause();
@@ -107,7 +110,7 @@ public class CDCLSolver implements ISolver {
     /**
      * Simplify clauses using unit
      */
-    private boolean unitPropagation(Set<Clause> clauses, Variable latestDecision) {
+    private boolean unitPropagation(Set<Clause> clauses) {
         // For every clause, choose a variable, assign, then check if we can imply / force assignment
         // on other literals in clauses
         for (Clause c : clauses) {
@@ -118,9 +121,6 @@ public class CDCLSolver implements ISolver {
                 continue;
             }
             graph.addDecisionNode(v, decisionLevel);
-            if (latestDecision != null) {
-                graph.addEdge(latestDecision, v, c);
-            }
             if (!implicationPropagation(clauses, v)) {
                 return false;
             }
@@ -140,11 +140,10 @@ public class CDCLSolver implements ISolver {
             }
         }
         if (unassignedLiterals.size() != 1) {
-//            for (String k : assignment.keySet()) {
-//                System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
-//            }
-//            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
-            return true;
+            for (String k : assignment.keySet()) {
+                System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+            }
+            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
         }
         Literal literalToImply = unassignedLiterals.get(0);
         Variable v = new Variable(literalToImply.getName(), false);
@@ -157,7 +156,8 @@ public class CDCLSolver implements ISolver {
             System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
         }
         System.out.println();
-        return implicationPropagation(clauses, v);
+//        return implicationPropagation(clauses, v);
+        return true;
     }
 
     private boolean checkClauseSatisfiable(Clause clause) {
@@ -174,6 +174,46 @@ public class CDCLSolver implements ISolver {
             }
         }
         return sat;
+    }
+
+    private boolean implicationPropagationV2(Set<Clause> clauses, Variable decision) {
+
+        for (Clause c : clauses) {
+            // Clause do not contain the literal which we just assigned, continue
+            Literal l = c.getLiteral(decision.getName());
+            if (l == null) {
+                continue;
+            }
+
+            Boolean assignment = graph.getAssignment(decision.getName());
+            if (assignment == null) {
+                continue;
+            }
+
+            List<Literal> literalsWithoutAssignment = new ArrayList<>();
+
+            c.getLiterals().forEach(lit -> {
+                if (graph.getAssignment(lit.getName()) == null) {
+                    literalsWithoutAssignment.add(lit);
+                }
+            });
+
+            // If there is only 1 left, we can force the value, else continue
+            if (literalsWithoutAssignment.size() != 1) {
+                continue;
+            }
+
+            Literal lit = literalsWithoutAssignment.get(0);
+            boolean sat = checkClauseSatisfiable(c);
+            boolean assign = false;
+            if (!sat) {
+                assign = lit.isPositive();
+            }
+            Variable impliedVariable = new Variable(lit.getName(), assign);
+            graph.addImplicationNode(impliedVariable, decisionLevel, c);
+        }
+
+        return true;
     }
 
     private boolean implicationPropagation(Set<Clause> clauses, Variable decision) {
@@ -212,10 +252,10 @@ public class CDCLSolver implements ISolver {
 
             Literal lit = literalsWithoutAssignment.get(0);
             boolean sat = checkClauseSatisfiable(c);
-            boolean assign = false;
-            if (!sat) {
-                assign = lit.isPositive();
+            if (sat) {
+                continue;
             }
+            boolean assign = lit.isPositive();
             Variable impliedVariable = new Variable(lit.getName(), assign);
             graph.addImplicationNode(impliedVariable, decisionLevel, c);
 
@@ -265,10 +305,7 @@ public class CDCLSolver implements ISolver {
      * Backtracks to the decision level computed by conflict analysis
      */
     private void backtrack(int level) {
-        while (history.size() > level + 1) {
-            history.pop();
-        }
-        graph = history.peek();
+        graph.revertToDecisionLevel(level);
         decisionLevel = level;
     }
 
