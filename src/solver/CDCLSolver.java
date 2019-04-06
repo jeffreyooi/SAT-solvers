@@ -25,8 +25,6 @@ public class CDCLSolver implements ISolver {
 
     private Clause conflictedClause;
 
-    private Stack<ImplicationGraph> history;
-
     public CDCLSolver(ClauseDB db) {
         this.db = db;
         initialize();
@@ -36,7 +34,6 @@ public class CDCLSolver implements ISolver {
         graph = new ImplicationGraph();
         // Set everything as unassigned in implication graph
         graph.initialize(db.getAllClauses());
-        history = new Stack<>();
     }
 
     public String evaluate() {
@@ -48,7 +45,6 @@ public class CDCLSolver implements ISolver {
 
         // dl <- 0
         decisionLevel = 0;
-        history.push(graph.copy());
 
         // while (not allVariablesAssigned(graph, variable to apply unit resolution)
         while (!allVariablesAssigned()) {
@@ -64,8 +60,6 @@ public class CDCLSolver implements ISolver {
             // Store decision
             // v <- v union {assignment, variable}
             graph.addDecisionNode(decision, decisionLevel);
-
-            history.push(graph.copy());
 
             // if unit propagation(graph, variable) == conflict
                 // beta (decisionLevel to backtrack to) = conflict analysis
@@ -95,10 +89,7 @@ public class CDCLSolver implements ISolver {
 
             backtrack(backtrackLevel);
 
-//            if (!unitPropagation(db.getAllClauses())) {
-//                return UNSAT;
-//            }
-            if (!forceSatisfyClause(db.getLastLearntClause(), db.getAllClauses())) {
+            if (!forceSatisfyClause(db.getLastLearntClause())) {
                 return UNSAT;
             }
             db.clearLastLearntClause();
@@ -129,7 +120,7 @@ public class CDCLSolver implements ISolver {
         return true;
     }
 
-    private boolean forceSatisfyClause(Clause clause, Set<Clause> clauses) {
+    private boolean forceSatisfyClause(Clause clause) {
         System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
         Map<String, Boolean> assignment = graph.getAssignmentForClause(clause);
 
@@ -156,64 +147,23 @@ public class CDCLSolver implements ISolver {
             System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
         }
         System.out.println();
-//        return implicationPropagation(clauses, v);
         return true;
     }
 
     private boolean checkClauseSatisfiable(Clause clause) {
-        boolean sat = true;
+        boolean sat = false;
         for (Literal l : clause.getLiterals()) {
             Boolean assignment = graph.getAssignment(l.getName());
             if (assignment == null) {
                 continue;
             }
 
-            if (!l.isSatisfied(assignment)) {
-                sat = false;
+            if (l.isSatisfied(assignment)) {
+                sat = true;
                 break;
             }
         }
         return sat;
-    }
-
-    private boolean implicationPropagationV2(Set<Clause> clauses, Variable decision) {
-
-        for (Clause c : clauses) {
-            // Clause do not contain the literal which we just assigned, continue
-            Literal l = c.getLiteral(decision.getName());
-            if (l == null) {
-                continue;
-            }
-
-            Boolean assignment = graph.getAssignment(decision.getName());
-            if (assignment == null) {
-                continue;
-            }
-
-            List<Literal> literalsWithoutAssignment = new ArrayList<>();
-
-            c.getLiterals().forEach(lit -> {
-                if (graph.getAssignment(lit.getName()) == null) {
-                    literalsWithoutAssignment.add(lit);
-                }
-            });
-
-            // If there is only 1 left, we can force the value, else continue
-            if (literalsWithoutAssignment.size() != 1) {
-                continue;
-            }
-
-            Literal lit = literalsWithoutAssignment.get(0);
-            boolean sat = checkClauseSatisfiable(c);
-            boolean assign = false;
-            if (!sat) {
-                assign = lit.isPositive();
-            }
-            Variable impliedVariable = new Variable(lit.getName(), assign);
-            graph.addImplicationNode(impliedVariable, decisionLevel, c);
-        }
-
-        return true;
     }
 
     private boolean implicationPropagation(Set<Clause> clauses, Variable decision) {

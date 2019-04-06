@@ -11,11 +11,6 @@ import util.SolverUtil;
 
 public class ImplicationGraph {
     /**
-     * Map nodes that links to other nodes.
-     */
-    private Map<Node, List<Node>> adjacencyList;
-
-    /**
      * List of edges. Each element is a pair of source to destination node.
      */
     private Map<Pair<Node, Node>, Clause> edgeMap;
@@ -29,7 +24,6 @@ public class ImplicationGraph {
     private int backtrackLevel;
 
     public ImplicationGraph() {
-        adjacencyList = new HashMap<>();
         edgeMap = new HashMap<>();
         unassignedVariables = new HashSet<>();
         assignedVariables = new HashMap<>();
@@ -38,7 +32,6 @@ public class ImplicationGraph {
     }
 
     private ImplicationGraph(ImplicationGraph other) {
-//        adjacencyList = new HashMap<>(other.adjacencyList);
         edgeMap = new HashMap<>(other.edgeMap);
         unassignedVariables = new HashSet<>(other.unassignedVariables);
         assignedVariables = new HashMap<>(other.assignedVariables);
@@ -62,7 +55,6 @@ public class ImplicationGraph {
 
     public void addImplicationNode(Variable impliedVariable, int decisionLevel, Clause antecedent) {
         Node impliedNode = new Node(impliedVariable, decisionLevel);
-//        adjacencyList.put(impliedNode, new ArrayList<>());
         unassignedVariables.remove(impliedVariable.getName());
         assignedVariables.put(impliedVariable.getName(), impliedVariable.getAssignment());
         assignedNodes.put(impliedVariable.getName(), impliedNode);
@@ -86,16 +78,11 @@ public class ImplicationGraph {
     }
 
     private void addNode(Node node) {
-//        if (adjacencyList.containsKey(node)) {
-//            return;
-//        }
-
         if (assignedNodes.containsKey(node.getVariable().getName())) {
             return;
         }
 
         Variable v = node.getVariable();
-//        adjacencyList.put(node, new ArrayList<>());
         unassignedVariables.remove(v.getName());
         assignedVariables.put(v.getName(), v.getAssignment());
         assignedNodes.put(v.getName(), node);
@@ -117,13 +104,6 @@ public class ImplicationGraph {
             assignedVariables.remove(remove.getVariable().getName());
             unassignedVariables.add(remove.getVariable().getName());
         }
-    }
-
-    public void addEdge(Variable from, Variable to, Clause clause) {
-        Node fromNode = assignedNodes.get(from.getName());
-        Node toNode = assignedNodes.get(to.getName());
-
-        addEdge(fromNode, toNode, clause);
     }
 
     private void removeEdges(Node n) {
@@ -148,9 +128,6 @@ public class ImplicationGraph {
             return;
         }
         edgeMap.put(edge, clause);
-//        if (!adjacencyList.get(from).contains(to)) {
-//            adjacencyList.get(from).add(to);
-//        }
     }
 
     public Clause analyzeConflict(Clause conflictedClause, int decisionLevel) {
