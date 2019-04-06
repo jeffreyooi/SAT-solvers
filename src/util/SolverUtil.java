@@ -2,8 +2,10 @@ package util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import datastruct.Clause;
 import datastruct.ImplicationGraph;
@@ -34,19 +36,18 @@ public class SolverUtil {
         }
 
         Map<String, List<Literal>> variableToLiteralsMap = new HashMap<>();
+        Set<Literal> literalsSet = new HashSet<>();
 
-        for (Literal l : left.getLiterals()) {
+        literalsSet.addAll(left.getLiterals());
+        literalsSet.addAll(right.getLiterals());
+
+        for (Literal l : literalsSet) {
             if (!variableToLiteralsMap.containsKey(l.getName())) {
                 variableToLiteralsMap.put(l.getName(), new ArrayList<>());
             }
-            variableToLiteralsMap.get(l.getName()).add(l);
-        }
-
-        for (Literal l : right.getLiterals()) {
-            if (!variableToLiteralsMap.containsKey(l.getName())) {
-                variableToLiteralsMap.put(l.getName(), new ArrayList<>());
+            if (!variableToLiteralsMap.get(l.getName()).contains(l)) {
+                variableToLiteralsMap.get(l.getName()).add(l);
             }
-            variableToLiteralsMap.get(l.getName()).add(l);
         }
 
         Clause resolutionClause = new Clause();
@@ -57,6 +58,13 @@ public class SolverUtil {
                 resolutionClause.addLiteral(literals.get(0));
             }
         }
+
+        System.out.println(
+                String.format("Resolve %s with %s \n --> %s\n",
+                        left.toString(),
+                        right.toString(),
+                        resolutionClause.toString()));
+
         return resolutionClause;
     }
 }

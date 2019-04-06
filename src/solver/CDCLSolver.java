@@ -78,6 +78,15 @@ public class CDCLSolver implements ISolver {
                 continue;
             }
 
+            System.out.println("Decision made during conflict: " + decision);
+            System.out.println("Assignment when conflict:");
+            System.out.println(graph.assignmentsToString());
+            System.out.println(graph.edgesToString());
+            System.out.println();
+
+            System.out.println("Conflicting clause: " + conflictedClause.toString());
+            System.out.println("Conflicting assignment: " + graph.getConflictedNode());
+
             int backtrackLevel = conflictAnalysis();
 
             if (backtrackLevel == -1) {
@@ -85,6 +94,11 @@ public class CDCLSolver implements ISolver {
             }
 
             backtrack(backtrackLevel);
+
+            if (!unitPropagation(db.getAllClauses(), null)) {
+                return UNSAT;
+            }
+            db.clearLastLearntClause();
         }
 
         return graph.assignmentsToString();
@@ -113,6 +127,37 @@ public class CDCLSolver implements ISolver {
         }
 
         return true;
+    }
+
+    private boolean forceSatisfyClause(Clause clause, Set<Clause> clauses) {
+        System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
+        Map<String, Boolean> assignment = graph.getAssignmentForClause(clause);
+
+        List<Literal> unassignedLiterals = new ArrayList<>();
+        for (Literal l : clause.getLiterals()) {
+            if (!assignment.containsKey(l.getName())) {
+                unassignedLiterals.add(l);
+            }
+        }
+        if (unassignedLiterals.size() != 1) {
+//            for (String k : assignment.keySet()) {
+//                System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+//            }
+//            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
+            return true;
+        }
+        Literal literalToImply = unassignedLiterals.get(0);
+        Variable v = new Variable(literalToImply.getName(), false);
+        assignment.put(literalToImply.getName(), false);
+        if (!clause.isSatisfied(assignment)) {
+            v.setAssignment(true);
+        }
+        graph.addImplicationNode(v, decisionLevel, clause);
+        for (String k : assignment.keySet()) {
+            System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+        }
+        System.out.println();
+        return implicationPropagation(clauses, v);
     }
 
     private boolean checkClauseSatisfiable(Clause clause) {
@@ -208,7 +253,10 @@ public class CDCLSolver implements ISolver {
 
         Clause learntClause = graph.analyzeConflict(conflictedClause, conflictDecisionLevel);
 
-        db.insertClause(learntClause);
+        System.out.println("Learnt clause: " + learntClause.toString());
+        System.out.println("Backtrack to: " + graph.getBacktrackLevel());
+
+        db.insertLearntClause(learntClause);
 
         return graph.getBacktrackLevel();
     }
@@ -216,11 +264,12 @@ public class CDCLSolver implements ISolver {
     /**
      * Backtracks to the decision level computed by conflict analysis
      */
-    private void backtrack(int decisionLevel) {
-        while (history.size() > decisionLevel) {
+    private void backtrack(int level) {
+        while (history.size() > level + 1) {
             history.pop();
         }
         graph = history.peek();
+        decisionLevel = level;
     }
 
     private boolean allVariablesAssigned() {

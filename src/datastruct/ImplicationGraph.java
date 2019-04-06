@@ -161,6 +161,31 @@ public class ImplicationGraph {
                 analyzedClauses.add(clause);
             }
             clausesToAnalyze.clear();
+
+            // Check if we are at an implication point where we can stop
+            // i.e. only left with 1 node with decisionLevel
+            int count = 0;
+            List<Integer> decisionLevels = new ArrayList<>();
+            for (Literal l : learntClause.getLiterals()) {
+                Node n = assignedNodes.get(l.getName());
+                if (n.getDecisionLevel() == decisionLevel) {
+                    ++count;
+                } else {
+                    decisionLevels.add(n.getDecisionLevel());
+                }
+            }
+
+            if (count == 1) {
+                --backtrackLevel;
+                for (int level : decisionLevels) {
+                    if (level >= decisionLevel) {
+                        continue;
+                    }
+                    backtrackLevel = Math.max(level, backtrackLevel);
+                }
+                break;
+            }
+
             nodesList.sort((Node one, Node two) -> Integer.compare(one.getDecisionLevel(), two.getDecisionLevel()) * -1);
         }
 
@@ -233,6 +258,17 @@ public class ImplicationGraph {
             sb.append("\n");
         }
 
+        return sb.toString();
+    }
+
+    public String edgesToString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (Pair<Node, Node> key : edgeMap.keySet()) {
+            sb.append(key.getFirst()).append(" -> ").append(key.getSecond());
+            sb.append(": ").append(edgeMap.get(key).toString());
+            sb.append("\n");
+        }
         return sb.toString();
     }
 }
