@@ -13,20 +13,18 @@ import datastruct.Node;
 import datastruct.Variable;
 import db.ClauseDB;
 
-public class CDCLSolver implements ISolver {
+public class CDCLSolver extends Solver {
 
     private static final String UNSAT = "UNSAT";
 
     ImplicationGraph graph;
-
-    ClauseDB db;
 
     private int decisionLevel;
 
     private Clause conflictedClause;
 
     public CDCLSolver(ClauseDB db) {
-        this.db = db;
+        super(db);
         initialize();
     }
 
@@ -135,12 +133,13 @@ public class CDCLSolver implements ISolver {
             }
         }
         if (unassignedLiterals.size() != 1) {
-            if (Config.logging == Config.Logging.DEBUG) {
-                for (String k : assignment.keySet()) {
-                    System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
-                }
-            }
-            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
+            return true;
+//            if (Config.logging == Config.Logging.DEBUG) {
+//                for (String k : assignment.keySet()) {
+//                    System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
+//                }
+//            }
+//            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
         }
         Literal literalToImply = unassignedLiterals.get(0);
         Variable v = new Variable(literalToImply.getName(), false);
@@ -252,8 +251,10 @@ public class CDCLSolver implements ISolver {
 
         Clause learntClause = graph.analyzeConflict(conflictedClause, conflictDecisionLevel);
 
-        System.out.println("Learnt clause: " + learntClause.toString());
-        System.out.println("Backtrack to: " + graph.getBacktrackLevel());
+        if (Config.logging != Config.Logging.NONE) {
+            System.out.println("Learnt clause: " + learntClause.toString());
+            System.out.println("Backtrack to: " + graph.getBacktrackLevel());
+        }
 
         db.insertLearntClause(learntClause);
 
