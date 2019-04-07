@@ -56,6 +56,10 @@ public class DimacsParser {
             // Tricky: to catch certain cases where the clause is marked end by 0 but does not go to new line
             String[] clauseStrings = s.trim().split("[ ][0]");
 
+            if (clauseStrings.length == 1 && clauseStrings[0].equals("0")) {
+                continue;
+            }
+
             for (String clauseString : clauseStrings) {
                 Clause clause = parseClause(clauseString);
                 db.insertClause(clause);
