@@ -16,7 +16,7 @@ public class Variable {
         return variableName;
     }
 
-    boolean getAssignment() {
+    public boolean getAssignment() {
         return assignment;
     }
 

@@ -1,7 +1,6 @@
 package datastruct;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,17 +11,20 @@ import java.util.Set;
 import config.Config;
 import util.SolverUtil;
 
+/**
+ * A graph where the nodes are assigned variables, with edges to show implications.
+ */
 public class ImplicationGraph {
     /**
-     * List of edges. Each element is a pair of source to destination node.
+     * Map of edges that shows implication. The key is a pair of nodes, which the first node implies the second
+     * node, together with the clause which caused the implication.
      */
     private Map<Pair<Node, Node>, Clause> edgeMap;
 
+    // TODO: consider moving these to ClauseDB instead
     private Set<String> unassignedVariables;
     private Map<String, Boolean> assignedVariables;
     private Map<String, Node> assignedNodes;
-
-    private Node conflictedNode;
 
     private int backtrackLevel;
 
@@ -38,11 +40,22 @@ public class ImplicationGraph {
         clauses.forEach(c -> c.getLiterals().forEach(l -> unassignedVariables.add(l.getName())));
     }
 
+    /**
+     * Adds a decision node.
+     * @param v assigned variable
+     * @param decisionLevel decision level during the assignment
+     */
     public void addDecisionNode(Variable v, int decisionLevel) {
         Node node = new Node(v, decisionLevel);
         addNode(node);
     }
 
+    /**
+     * Adds an implied variable node.
+     * @param impliedVariable implied variable
+     * @param decisionLevel decision level during the implication
+     * @param antecedent the clause that caused the implication
+     */
     public void addImplicationNode(Variable impliedVariable, int decisionLevel, Clause antecedent) {
         Node impliedNode = new Node(impliedVariable, decisionLevel);
         unassignedVariables.remove(impliedVariable.getName());
@@ -59,14 +72,10 @@ public class ImplicationGraph {
         });
     }
 
-    public void setConflictedNode(Variable var, int decisionLevel) {
-        conflictedNode = new Node(var, decisionLevel);
-    }
-
-    public Node getConflictedNode() {
-        return conflictedNode;
-    }
-
+    /**
+     * Adds a node to the graph.
+     * @param node node to add to graph.
+     */
     private void addNode(Node node) {
         if (assignedNodes.containsKey(node.getVariable().getName())) {
             return;
@@ -120,7 +129,7 @@ public class ImplicationGraph {
         edgeMap.put(edge, clause);
     }
 
-    public Clause analyzeConflict(Clause conflictedClause, int decisionLevel) {
+    public Clause analyzeConflict(Clause conflictedClause, Variable conflictedVariable, int decisionLevel) {
         Set<Clause> analyzedClauses = new HashSet<>();
 
         Clause learntClause = new Clause(conflictedClause);
@@ -132,6 +141,7 @@ public class ImplicationGraph {
 
         backtrackLevel = decisionLevel;
 
+        Node conflictedNode = new Node(conflictedVariable, decisionLevel);
         nodesList.add(conflictedNode);
         while (!nodesList.isEmpty()) {
             Node nodeToLookAt = nodesList.get(0);

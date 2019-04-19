@@ -9,17 +9,16 @@ import config.Config;
 import datastruct.Clause;
 import datastruct.ImplicationGraph;
 import datastruct.Literal;
-import datastruct.Node;
 import datastruct.Variable;
 import db.ClauseDB;
 
 public class CDCLSolver extends Solver {
 
-    private static final String UNSAT = "UNSAT";
-
     ImplicationGraph graph;
 
     private int decisionLevel;
+    private int conflictedDecisionLevel;
+    private Variable conflictedVariable;
 
     private Clause conflictedClause;
 
@@ -28,44 +27,34 @@ public class CDCLSolver extends Solver {
         initialize();
     }
 
+    /**
+     * Initialize CDCL solver
+     */
     private void initialize() {
         graph = new ImplicationGraph();
-        // Set everything as unassigned in implication graph
         graph.initialize(db.getAllClauses());
+        conflictedDecisionLevel = -1;
+        decisionLevel = 0;
     }
 
     public String evaluate() {
-        // if(unitPropagation(graph, variable to apply unit resolution) == conflict
-        // return unsat
+        // If unit propagation failed before even evaluation, return UNSAT
         if (!unitPropagation(db.getAllClauses())) {
             return UNSAT;
         }
 
-        // dl <- 0
-        decisionLevel = 0;
-
-        // while (not allVariablesAssigned(graph, variable to apply unit resolution)
         while (!allVariablesAssigned()) {
-            // pick branching variable(graph, variable)
             Variable decision = pickBranchingVariable();
             if (decision == null) {
                 return UNSAT;
             }
 
-            // dl <- dl + 1
             decisionLevel += 1;
 
             // Store decision
-            // v <- v union {assignment, variable}
             graph.addDecisionNode(decision, decisionLevel);
 
-            // if unit propagation(graph, variable) == conflict
-                // beta (decisionLevel to backtrack to) = conflict analysis
-                    // if beta < 0 return unsat
-                    // else backtrack(beta), decision level = beta
-
             // Propagation does not result in any conflict, continue
-
             if (implicationPropagation(db.getAllClauses(), decision)) {
                 continue;
             }
@@ -78,9 +67,10 @@ public class CDCLSolver extends Solver {
                 System.out.println();
 
                 System.out.println("Conflicting clause: " + conflictedClause.toString());
-                System.out.println("Conflicting assignment: " + graph.getConflictedNode());
+                System.out.println("Conflicting assignment: " + conflictedVariable.toString());
             }
 
+            // Perform conflict analysis to learn new clause and level to backtrack to
             int backtrackLevel = conflictAnalysis();
 
             if (backtrackLevel == -1) {
@@ -101,7 +91,7 @@ public class CDCLSolver extends Solver {
     /**
      * Simplify clauses using unit
      */
-    private boolean unitPropagation(Set<Clause> clauses) {
+    boolean unitPropagation(Set<Clause> clauses) {
         // For every clause, choose a variable, assign, then check if we can imply / force assignment
         // on other literals in clauses
         for (Clause c : clauses) {
@@ -134,12 +124,6 @@ public class CDCLSolver extends Solver {
         }
         if (unassignedLiterals.size() != 1) {
             return true;
-//            if (Config.logging == Config.Logging.DEBUG) {
-//                for (String k : assignment.keySet()) {
-//                    System.err.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
-//                }
-//            }
-//            throw new IllegalStateException("There should always be only 1 unassigned literal that can be implied from learnt clause");
         }
         Literal literalToImply = unassignedLiterals.get(0);
         Variable v = new Variable(literalToImply.getName(), false);
@@ -178,7 +162,8 @@ public class CDCLSolver extends Solver {
         Clause conflicted = graph.getConflictedClause(clauses);
         if (conflicted != null) {
             conflictedClause = conflicted;
-            graph.setConflictedNode(decision, decisionLevel);
+            conflictedDecisionLevel = decisionLevel;
+            conflictedVariable = decision;
             return false;
         }
 
@@ -229,7 +214,7 @@ public class CDCLSolver extends Solver {
     /**
      * Select a variable to assign and the respective value.
      */
-    protected Variable pickBranchingVariable() {
+    Variable pickBranchingVariable() {
         return graph.getNextUnassignedVariable(false);
     }
 
@@ -237,19 +222,12 @@ public class CDCLSolver extends Solver {
      * Analyze most recent conflict and learning a new clause from the conflict and returns the
      * decision level to backtrack to. If unable to analyze, return -1 to indicate that it is unsat
      */
-    private int conflictAnalysis() {
+    int conflictAnalysis() {
         if (conflictedClause == null) {
             throw new NullPointerException("conflictedClause is null");
         }
 
-        Node conflictedNode = graph.getConflictedNode();
-        if (conflictedNode == null) {
-            throw new NullPointerException("conflictedNode is null");
-        }
-
-        int conflictDecisionLevel = conflictedNode.getDecisionLevel();
-
-        Clause learntClause = graph.analyzeConflict(conflictedClause, conflictDecisionLevel);
+        Clause learntClause = graph.analyzeConflict(conflictedClause, conflictedVariable, conflictedDecisionLevel);
 
         if (Config.logging != Config.Logging.NONE) {
             System.out.println("Learnt clause: " + learntClause.toString());
@@ -264,7 +242,7 @@ public class CDCLSolver extends Solver {
     /**
      * Backtracks to the decision level computed by conflict analysis
      */
-    private void backtrack(int level) {
+    void backtrack(int level) {
         graph.revertToDecisionLevel(level);
         decisionLevel = level;
     }
