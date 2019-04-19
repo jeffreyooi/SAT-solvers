@@ -4,16 +4,16 @@ public class Pair<F, S> {
     private F first;
     private S second;
 
-    Pair(F first, S second) {
+    public Pair(F first, S second) {
         this.first = first;
         this.second = second;
     }
 
-    F getFirst() {
+    public F getFirst() {
         return first;
     }
 
-    S getSecond() {
+    public S getSecond() {
         return second;
     }
 
