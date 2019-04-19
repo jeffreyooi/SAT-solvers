@@ -12,6 +12,7 @@ public class TwoClauseSolver extends CDCLSolver {
 
     @Override
     protected Variable pickBranchingVariable() {
+        super.pickBranchingVariable();
         Map<String, Integer> twoClauseLiteralCountMap = db.getTwoClauseLiteralCountMap();
         return graph.getNextUnassignedVariable(twoClauseLiteralCountMap);
     }

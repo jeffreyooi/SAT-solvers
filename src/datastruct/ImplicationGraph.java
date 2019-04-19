@@ -36,6 +36,10 @@ public class ImplicationGraph {
         backtrackLevel = -1;
     }
 
+    /**
+     * Initialize the graph.
+     * @param clauses clauses in the CNF
+     */
     public void initialize(Set<Clause> clauses) {
         clauses.forEach(c -> c.getLiterals().forEach(l -> unassignedVariables.add(l.getName())));
     }
@@ -87,8 +91,12 @@ public class ImplicationGraph {
         assignedNodes.put(v.getName(), node);
     }
 
+    /**
+     * Backtracks to the decision level. Removes the edges (implications) that was made at the decision
+     * level.
+     * @param decisionLevel decision level to backtrack to
+     */
     public void revertToDecisionLevel(int decisionLevel) {
-
         List<Node> nodesToRemove = new ArrayList<>();
         for (String k : assignedNodes.keySet()) {
             Node n = assignedNodes.get(k);
@@ -105,6 +113,10 @@ public class ImplicationGraph {
         }
     }
 
+    /**
+     * Remove edges (implications) that contains node.
+     * @param n node that specifies edges to remove
+     */
     private void removeEdges(Node n) {
         List<Pair<Node, Node>> edgesToRemove = new ArrayList<>();
         for (Pair<Node, Node> edge : edgeMap.keySet()) {
@@ -117,10 +129,21 @@ public class ImplicationGraph {
         }
     }
 
+    /**
+     * Get backtrack level. {@code analyzeConflict} must be called to get the correct level to backtrack to.
+     * @return decision level to backtrack to.
+     */
     public int getBacktrackLevel() {
         return backtrackLevel;
     }
 
+    /**
+     * Adds an edge (implication) from one node to another node, which means that the assignment of from node
+     * implies that to node must be of certain assignment.
+     * @param from from node
+     * @param to to node
+     * @param clause the antecedent clause that caused the implication
+     */
     private void addEdge(Node from, Node to, Clause clause) {
         Pair<Node, Node> edge = new Pair<>(from, to);
         if (edgeMap.containsKey(edge)) {
@@ -129,6 +152,13 @@ public class ImplicationGraph {
         edgeMap.put(edge, clause);
     }
 
+    /**
+     * Perform conflict analysis based on the information of the graph.
+     * @param conflictedClause clause that is conflicted
+     * @param conflictedVariable assigned variable that caused the conflict
+     * @param decisionLevel decision level during the conflict
+     * @return learnt clause
+     */
     public Clause analyzeConflict(Clause conflictedClause, Variable conflictedVariable, int decisionLevel) {
         Set<Clause> analyzedClauses = new HashSet<>();
 
@@ -211,10 +241,19 @@ public class ImplicationGraph {
         return learntClause;
     }
 
+    /**
+     * Checks if there are any unassigned variables.
+     * @return true if there are unassigned variables, false otherwise.
+     */
     private boolean hasUnassignedVariable() {
         return !unassignedVariables.isEmpty();
     }
 
+    /**
+     * Get next unassigned variable.
+     * @param random specify if to pick a variable randomly
+     * @return an unassigned variable
+     */
     public Variable getNextUnassignedVariable(boolean random) {
         if (!hasUnassignedVariable()) {
             return null;
@@ -230,6 +269,11 @@ public class ImplicationGraph {
         return new Variable(variableNames[index], true);
     }
 
+    /**
+     * Get net unassigned variable.
+     * @param literalCountMap literal count map that contains number of literals in puzzle
+     * @return an unassigned variable
+     */
     public Variable getNextUnassignedVariable(Map<String, Integer> literalCountMap) {
         List<Pair<Integer, String>> unassignedLiteralCountList = new ArrayList<>();
 
@@ -256,12 +300,17 @@ public class ImplicationGraph {
         return new Variable(selected, true);
     }
 
+    /**
+     * Get conflicted clause.
+     * @param clauses clauses in the puzzle
+     * @return conflicted clause
+     */
     public Clause getConflictedClause(Set<Clause> clauses) {
         for (Clause c : clauses) {
             boolean conflicted = true;
 
             for (Literal l : c.getLiterals()) {
-                Boolean assignment = assignedVariables.get(l.getName());
+                Boolean assignment = getAssignment(l.getName());
                 // If no assignment yet, or the assignment satisfies the literal, then it is not conflicted
                 if (assignment == null || l.isSatisfied(assignment)) {
                     conflicted = false;
@@ -275,10 +324,15 @@ public class ImplicationGraph {
         return null;
     }
 
+    /**
+     * Return map of assignments for the clause
+     * @param c clause to retrieve assignment map
+     * @return map of assignments
+     */
     public HashMap<String, Boolean> getAssignmentForClause(Clause c) {
         HashMap<String, Boolean> result = new HashMap<>();
         for (Literal l : c.getLiterals()) {
-            Boolean assignment = assignedVariables.get(l.getName());
+            Boolean assignment = getAssignment(l.getName());
             if (assignment == null) {
                 continue;
             }
@@ -287,6 +341,11 @@ public class ImplicationGraph {
         return result;
     }
 
+    /**
+     * Get assignment of variable.
+     * @param variableName variable to get assignment
+     * @return assignment of variable
+     */
     public Boolean getAssignment(String variableName) {
         if (!assignedVariables.containsKey(variableName)) {
             return null;
@@ -294,10 +353,19 @@ public class ImplicationGraph {
         return assignedVariables.get(variableName);
     }
 
+    /**
+     * Check if the number of variables are assigned.
+     * @param numOfVariables number of variables to check
+     * @return true if all variables are assigned, false otherwise
+     */
     public boolean allVariablesAssigned(int numOfVariables) {
         return assignedVariables.size() == numOfVariables;
     }
 
+    /**
+     * Return assigned variables in string.
+     * @return string of assigned variables
+     */
     public String assignmentsToString() {
         StringBuilder sb = new StringBuilder();
 
@@ -311,6 +379,10 @@ public class ImplicationGraph {
         return sb.toString();
     }
 
+    /**
+     * Return edges in string.
+     * @return string of edges
+     */
     public String edgesToString() {
         StringBuilder sb = new StringBuilder();
 

@@ -10,6 +10,7 @@ public class RandomSolver extends CDCLSolver {
 
     @Override
     protected Variable pickBranchingVariable() {
+        super.pickBranchingVariable();
         return graph.getNextUnassignedVariable(true);
     }
 }

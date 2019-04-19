@@ -12,6 +12,7 @@ public class NClauseSolver extends CDCLSolver {
 
     @Override
     protected Variable pickBranchingVariable() {
+        super.pickBranchingVariable();
         Map<String, Integer> nClauseLiteralCountMap = db.getLiteralCountMap();
         return graph.getNextUnassignedVariable(nClauseLiteralCountMap);
     }

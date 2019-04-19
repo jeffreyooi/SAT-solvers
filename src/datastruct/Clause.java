@@ -80,8 +80,8 @@ public class Clause implements Comparable<Clause> {
 
     /**
      * Used to sort clauses by number of literals
-     * @param other
-     * @return
+     * @param other other clause object
+     * @return sorting priority
      */
     public int compareTo(Clause other) {
         return literals.size() - other.literals.size();

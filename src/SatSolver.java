@@ -86,6 +86,7 @@ public class SatSolver {
         String result = solver.evaluate();
         long totalTime = System.nanoTime() - time;
         System.out.println("Total time: " + SolverUtil.millisecToString(totalTime));
+        System.out.println("Pick branching variable count: " + solver.getPickBranchingVariableCount());
         System.out.println(result);
     }
 

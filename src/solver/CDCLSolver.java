@@ -14,12 +14,27 @@ import db.ClauseDB;
 
 public class CDCLSolver extends Solver {
 
+    /**
+     * Implication graph that stores implications and assignments of the CNF
+     */
     ImplicationGraph graph;
 
+    /**
+     * Current decision level of the solver.
+     */
     private int decisionLevel;
-    private int conflictedDecisionLevel;
-    private Variable conflictedVariable;
 
+    /**
+     * Decision level at which conflict happens.
+     */
+    private int conflictedDecisionLevel;
+    /**
+     * Assigned variable which causes conflict.
+     */
+    private Variable conflictedVariable;
+    /**
+     * Clause that has conflict due to conflicted variable.
+     */
     private Clause conflictedClause;
 
     public CDCLSolver(ClauseDB db) {
@@ -37,6 +52,10 @@ public class CDCLSolver extends Solver {
         decisionLevel = 0;
     }
 
+    /**
+     * Solve the CNF.
+     * @return result of variable assignments in string
+     */
     public String evaluate() {
         // If unit propagation failed before even evaluation, return UNSAT
         if (!unitPropagation(db.getAllClauses())) {
@@ -89,7 +108,12 @@ public class CDCLSolver extends Solver {
     }
 
     /**
-     * Simplify clauses using unit
+     * Perform unit propagation, which checks if there are variables that can be assigned / implied due
+     * to several reasons such as:
+     * 1. It is a unit clause
+     * 2. There is only 1 unassigned variable in the clause
+     * @param clauses clauses in CNF
+     * @return true if there are no conflicts after propagation, false otherwise
      */
     boolean unitPropagation(Set<Clause> clauses) {
         // For every clause, choose a variable, assign, then check if we can imply / force assignment
@@ -110,6 +134,11 @@ public class CDCLSolver extends Solver {
         return true;
     }
 
+    /**
+     * Force to satisfy a clause. Only used for learnt clause.
+     * @param clause learnt clause
+     * @return true
+     */
     private boolean forceSatisfyClause(Clause clause) {
         if (Config.logging == Config.Logging.VERBOSE) {
             System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
@@ -136,12 +165,17 @@ public class CDCLSolver extends Solver {
             for (String k : assignment.keySet()) {
                 System.out.println(String.format("%s: %s", k, assignment.get(k) ? "true" : "false"));
             }
+            System.out.println();
         }
 
-        System.out.println();
         return true;
     }
 
+    /**
+     * Check if clause is still satisfiable.
+     * @param clause clause to verify
+     * @return true if clause is satisfiable, false otherwise
+     */
     private boolean checkClauseSatisfiable(Clause clause) {
         boolean sat = false;
         for (Literal l : clause.getLiterals()) {
@@ -158,6 +192,15 @@ public class CDCLSolver extends Solver {
         return sat;
     }
 
+    /**
+     * Perform implication propagation, which is to continuously imply / force variables to be a certain
+     * assignment if there is only one unassigned variable in a clause. If there exists a conflict,
+     * {@code conflictedClause}, {@code conflictedDecisionLevel} and {@code conflictedVariable} will be
+     * set.
+     * @param clauses clauses in CNF
+     * @param decision last decision made
+     * @return true if variables can be implied with no conflicts, false otherwise
+     */
     private boolean implicationPropagation(Set<Clause> clauses, Variable decision) {
         Clause conflicted = graph.getConflictedClause(clauses);
         if (conflicted != null) {
@@ -212,15 +255,19 @@ public class CDCLSolver extends Solver {
     }
 
     /**
-     * Select a variable to assign and the respective value.
+     * Picks an unassigned variable.
+     * @return unassigned variable
      */
     Variable pickBranchingVariable() {
+        super.pickBranchingVariable();
         return graph.getNextUnassignedVariable(false);
     }
 
     /**
      * Analyze most recent conflict and learning a new clause from the conflict and returns the
-     * decision level to backtrack to. If unable to analyze, return -1 to indicate that it is unsat
+     * decision level to backtrack to. If unable to analyze, return -1 to indicate that it is
+     * unsatisfiable.
+     * @return level to backtrack to
      */
     int conflictAnalysis() {
         if (conflictedClause == null) {
@@ -240,13 +287,18 @@ public class CDCLSolver extends Solver {
     }
 
     /**
-     * Backtracks to the decision level computed by conflict analysis
+     * Backtracks to the decision level.
+     * @param level decision level to backtrack to
      */
     void backtrack(int level) {
         graph.revertToDecisionLevel(level);
         decisionLevel = level;
     }
 
+    /**
+     * Check if all variables are assigned.
+     * @return true if all variables are assigned, false otherwise
+     */
     private boolean allVariablesAssigned() {
         return graph.allVariablesAssigned(db.getNumberOfLiterals());
     }

@@ -13,7 +13,7 @@ import datastruct.Literal;
 public class SolverUtil {
     public static Clause performResolution(Clause left, Clause right) {
         if (left == null && right == null) {
-            return null;
+            throw new IllegalArgumentException("Both left and right clauses cannot be null.");
         }
         if (left == null) {
             return right;
