@@ -3,6 +3,8 @@ import static config.Config.Solver.CDCL_NClause;
 import static config.Config.Solver.CDCL_Random;
 import static config.Config.Solver.CDCL_TwoClause;
 
+import java.io.IOException;
+
 import config.Config;
 import db.ClauseDB;
 import parser.DimacsParser;
@@ -16,7 +18,9 @@ import util.SolverUtil;
 
 public class SatSolver {
 
-    private static final String USAGE_MSG = "Usage: <Solver type> <CNF file name>";
+    private static final String USAGE_MSG
+            = "Usage: <Solver type> <CNF file name> <Number of iterations> [Logging] [Statistic log output] "
+            + "[Result output]";
     private static final String INVALID_TYPE_MSG = "Invalid type passed: %s\nAvailable solvers:\n- CDCL_Chaff\n- CDCL_TwoClause";
 
     private ClauseDB clauseDb;
@@ -82,16 +86,52 @@ public class SatSolver {
         if (solver == null) {
             return;
         }
-        long time = System.nanoTime();
-        String result = solver.evaluate();
-        long totalTime = System.nanoTime() - time;
-        System.out.println("Total time: " + SolverUtil.millisecToString(totalTime));
-        System.out.println("Pick branching variable count: " + solver.getPickBranchingVariableCount());
-        System.out.println(result);
+        int numberOfIterations =  Integer.parseInt(args[2]);
+
+        try {
+            if (args.length >= 4) {
+                solver.setStatisticsOutput(args[3]);
+                solver.logStatistics(new String[]{"Iteration", "Time (s)"});
+            }
+
+            if (args.length >= 5) {
+                solver.setResultOutput(args[4]);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for (int i = 0; i < numberOfIterations; ++i) {
+            long time = System.nanoTime();
+            String result = solver.evaluate();
+            long totalTime = System.nanoTime() - time;
+            if (Config.logging == Config.Logging.VERBOSE) {
+                System.out.println("Total time: " + SolverUtil.millisecToString(totalTime));
+                System.out.println("Pick branching variable count: " + solver.getPickBranchingVariableCount());
+                System.out.println(result);
+            }
+            try {
+                String[] stat = new String[]{String.valueOf(i + 1), SolverUtil.millisecToString(totalTime)};
+                solver.logStatistics(stat);
+                solver.writeResult(String.format("%d\n", i + 1));
+                solver.writeResult(result);
+            } catch (IOException e) {
+                e.printStackTrace();
+                break;
+            }
+            solver.reset();
+        }
+
+        try {
+            solver.finalize();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
-        if (args.length != 2) {
+        if (args.length < 3) {
             System.out.println(USAGE_MSG);
             return;
         }

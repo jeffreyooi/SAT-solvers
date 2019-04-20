@@ -302,4 +302,13 @@ public class CDCLSolver extends Solver {
     private boolean allVariablesAssigned() {
         return graph.allVariablesAssigned(db.getNumberOfLiterals());
     }
+
+    public void reset() {
+        graph.reset();
+        graph.initialize(db.getAllClauses());
+        decisionLevel = 0;
+        conflictedDecisionLevel = -1;
+        conflictedVariable = null;
+        conflictedClause = null;
+    }
 }

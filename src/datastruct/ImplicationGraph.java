@@ -362,6 +362,13 @@ public class ImplicationGraph {
         return assignedVariables.size() == numOfVariables;
     }
 
+    public void reset() {
+        edgeMap.clear();
+        unassignedVariables.clear();
+        assignedVariables.clear();
+        assignedNodes.clear();
+    }
+
     /**
      * Return assigned variables in string.
      * @return string of assigned variables
