@@ -62,7 +62,7 @@ public class Clause implements Comparable<Clause> {
             }
         }
 
-        if (unassignedLiteral == null) {
+        if (unassignedLiteral == null || isSatisfied) {
             return null;
         }
         if (!unassignedLiteral.isPositive()) {

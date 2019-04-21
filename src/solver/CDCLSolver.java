@@ -1,6 +1,7 @@
 package solver;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,9 +117,31 @@ public class CDCLSolver extends Solver {
      * @return true if there are no conflicts after propagation, false otherwise
      */
     boolean unitPropagation(Set<Clause> clauses) {
+        Set<Clause> unitClauses = new HashSet<>();
+        Set<Clause> nonUnitClauses = new HashSet<>();
+        clauses.forEach(clause -> {
+            if (clause.getLiterals().size() == 1) {
+                unitClauses.add(clause);
+            } else {
+                nonUnitClauses.add(clause);
+            }
+        });
+
+        for (Clause c : unitClauses) {
+            Map<String, Boolean> assignment = graph.getAssignmentForClause(c);
+            if (!assignment.isEmpty()) {
+                continue;
+            }
+            Variable v = c.getImpliedVariable(assignment);
+            if (v == null) {
+                continue;
+            }
+            graph.addDecisionNode(v, decisionLevel);
+        }
+
         // For every clause, choose a variable, assign, then check if we can imply / force assignment
         // on other literals in clauses
-        for (Clause c : clauses) {
+        for (Clause c : nonUnitClauses) {
             Map<String, Boolean> assignment = graph.getAssignmentForClause(c);
             // Only can imply if there's only 1 literal unassigned in a clause
             Variable v = c.getImpliedVariable(assignment);
@@ -222,27 +245,32 @@ public class CDCLSolver extends Solver {
                 continue;
             }
 
-            List<Literal> literalsWithoutAssignment = new ArrayList<>();
-
-            c.getLiterals().forEach(lit -> {
-                if (graph.getAssignment(lit.getName()) == null) {
-                    literalsWithoutAssignment.add(lit);
-                }
-            });
-
-
-            // If there is only 1 left, we can force the value, else continue
-            if (literalsWithoutAssignment.size() != 1) {
+//            List<Literal> literalsWithoutAssignment = new ArrayList<>();
+//
+//            c.getLiterals().forEach(lit -> {
+//                if (graph.getAssignment(lit.getName()) == null) {
+//                    literalsWithoutAssignment.add(lit);
+//                }
+//            });
+//
+//
+//            // If there is only 1 left, we can force the value, else continue
+//            if (literalsWithoutAssignment.size() != 1) {
+//                continue;
+//            }
+//
+//            Literal lit = literalsWithoutAssignment.get(0);
+//            boolean sat = checkClauseSatisfiable(c);
+//            if (sat) {
+//                continue;
+//            }
+//            boolean assign = lit.isPositive();
+//            Variable impliedVariable = new Variable(lit.getName(), assign);
+            Map<String, Boolean> clauseAssignment = graph.getAssignmentForClause(c);
+            Variable impliedVariable = c.getImpliedVariable(clauseAssignment);
+            if (impliedVariable == null) {
                 continue;
             }
-
-            Literal lit = literalsWithoutAssignment.get(0);
-            boolean sat = checkClauseSatisfiable(c);
-            if (sat) {
-                continue;
-            }
-            boolean assign = lit.isPositive();
-            Variable impliedVariable = new Variable(lit.getName(), assign);
             graph.addImplicationNode(impliedVariable, decisionLevel, c);
 
             // Recursively check until we cannot imply / force any other values
