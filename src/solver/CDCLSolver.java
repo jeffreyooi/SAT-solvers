@@ -23,20 +23,20 @@ public class CDCLSolver extends Solver {
     /**
      * Current decision level of the solver.
      */
-    private int decisionLevel;
+    int decisionLevel;
 
     /**
      * Decision level at which conflict happens.
      */
-    private int conflictedDecisionLevel;
+    int conflictedDecisionLevel;
     /**
      * Assigned variable which causes conflict.
      */
-    private Variable conflictedVariable;
+    Variable conflictedVariable;
     /**
      * Clause that has conflict due to conflicted variable.
      */
-    private Clause conflictedClause;
+    Clause conflictedClause;
 
     public CDCLSolver(ClauseDB db) {
         super(db);
@@ -162,7 +162,7 @@ public class CDCLSolver extends Solver {
      * @param clause learnt clause
      * @return true
      */
-    private boolean forceSatisfyClause(Clause clause) {
+    boolean forceSatisfyClause(Clause clause) {
         if (Config.logging == Config.Logging.VERBOSE) {
             System.out.println(String.format("Forcing clause %s to be true", clause.toString()));
         }
@@ -224,7 +224,7 @@ public class CDCLSolver extends Solver {
      * @param decision last decision made
      * @return true if variables can be implied with no conflicts, false otherwise
      */
-    private boolean implicationPropagation(Set<Clause> clauses, Variable decision) {
+    boolean implicationPropagation(Set<Clause> clauses, Variable decision) {
         Clause conflicted = graph.getConflictedClause(clauses);
         if (conflicted != null) {
             conflictedClause = conflicted;
@@ -309,9 +309,17 @@ public class CDCLSolver extends Solver {
             System.out.println("Backtrack to: " + graph.getBacktrackLevel());
         }
 
-        db.insertLearntClause(learntClause);
+        addLearntClause(learntClause);
 
         return graph.getBacktrackLevel();
+    }
+
+    /**
+     * Insert learnt clause into DB.
+     * @param learntClause learnt clause
+     */
+    void addLearntClause(Clause learntClause) {
+        db.insertLearntClause(learntClause);
     }
 
     /**
@@ -327,7 +335,7 @@ public class CDCLSolver extends Solver {
      * Check if all variables are assigned.
      * @return true if all variables are assigned, false otherwise
      */
-    private boolean allVariablesAssigned() {
+    boolean allVariablesAssigned() {
         return graph.allVariablesAssigned(db.getNumberOfLiterals());
     }
 
@@ -338,5 +346,6 @@ public class CDCLSolver extends Solver {
         conflictedDecisionLevel = -1;
         conflictedVariable = null;
         conflictedClause = null;
+        db.clearLearntClauses();
     }
 }

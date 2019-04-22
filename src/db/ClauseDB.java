@@ -102,9 +102,18 @@ public class ClauseDB {
         return literals.size();
     }
 
+    public Set<String> getAllLiterals() {
+        return literals;
+    }
+
     public void reset() {
         clauses.clear();
         literals.clear();
+        learntClauses.clear();
+        lastLearntClause = null;
+    }
+
+    public void clearLearntClauses() {
         learntClauses.clear();
         lastLearntClause = null;
     }

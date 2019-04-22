@@ -45,6 +45,14 @@ public class ImplicationGraph {
     }
 
     /**
+     * Get unassigned variables.
+     * @return set of unassigned variables
+     */
+    public Set<String> getUnassignedVariables() {
+        return unassignedVariables;
+    }
+
+    /**
      * Adds a decision node.
      * @param v assigned variable
      * @param decisionLevel decision level during the assignment

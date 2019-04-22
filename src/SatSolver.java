@@ -2,6 +2,7 @@ import static config.Config.Solver.CDCL_Chaff;
 import static config.Config.Solver.CDCL_NClause;
 import static config.Config.Solver.CDCL_Random;
 import static config.Config.Solver.CDCL_TwoClause;
+import static config.Config.Solver.CDCL_VSDIS;
 
 import java.io.IOException;
 
@@ -13,6 +14,7 @@ import solver.ISolver;
 import solver.NClauseSolver;
 import solver.RandomSolver;
 import solver.TwoClauseSolver;
+import solver.VSDISSolver;
 import util.FileUtil;
 import util.SolverUtil;
 
@@ -36,8 +38,10 @@ public class SatSolver {
             return CDCL_TwoClause;
         } else if (strType.equals(CDCL_NClause.toString())) {
             return CDCL_NClause;
-        } else if (strType.equals(Config.Solver.CDCL_Random.toString())) {
+        } else if (strType.equals(CDCL_Random.toString())) {
             return CDCL_Random;
+        } else if (strType.equals(CDCL_VSDIS.toString())) {
+            return CDCL_VSDIS;
         }
         return null;
     }
@@ -52,6 +56,8 @@ public class SatSolver {
                 return new NClauseSolver(clauseDb);
             case CDCL_Random:
                 return new RandomSolver(clauseDb);
+            case CDCL_VSDIS:
+                return new VSDISSolver(clauseDb);
             default:
                 return null;
         }

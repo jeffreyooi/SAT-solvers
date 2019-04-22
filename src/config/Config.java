@@ -6,6 +6,7 @@ public class Config {
         CDCL_TwoClause,
         CDCL_NClause,
         CDCL_Random,
+        CDCL_VSDIS,
     }
 
     public enum Logging {
