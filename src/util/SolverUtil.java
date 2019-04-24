@@ -11,6 +11,15 @@ import datastruct.Clause;
 import datastruct.Literal;
 
 public class SolverUtil {
+    public static boolean checkSatisfiability(Set<Clause> clauses, Map<String, Boolean> assignments) {
+        for (Clause c : clauses) {
+            if (!c.isSatisfied(assignments)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static Clause performResolution(Clause left, Clause right) {
         if (left == null && right == null) {
             throw new IllegalArgumentException("Both left and right clauses cannot be null.");

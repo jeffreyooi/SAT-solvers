@@ -114,6 +114,7 @@ public class ClauseDB {
     }
 
     public void clearLearntClauses() {
+        learntClauses.forEach(c -> clauses.remove(c));
         learntClauses.clear();
         lastLearntClause = null;
     }

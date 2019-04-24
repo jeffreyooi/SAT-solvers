@@ -12,6 +12,7 @@ import datastruct.ImplicationGraph;
 import datastruct.Literal;
 import datastruct.Variable;
 import db.ClauseDB;
+import util.SolverUtil;
 
 public class CDCLSolver extends Solver {
 
@@ -103,6 +104,10 @@ public class CDCLSolver extends Solver {
                 return UNSAT;
             }
             db.clearLastLearntClause();
+        }
+
+        if (!SolverUtil.checkSatisfiability(db.getAllClauses(), graph.getAssignments())) {
+            return UNSAT;
         }
 
         return graph.assignmentsToString();
@@ -340,6 +345,7 @@ public class CDCLSolver extends Solver {
     }
 
     public void reset() {
+        super.reset();
         graph.reset();
         graph.initialize(db.getAllClauses());
         decisionLevel = 0;

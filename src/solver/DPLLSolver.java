@@ -112,4 +112,8 @@ public class DPLLSolver extends Solver {
         unassignedVariables.add(assigned.getFirst());
         decisionLevel = backtrackLevel;
     }
+
+    public void reset() {
+
+    }
 }

@@ -16,5 +16,5 @@ public class Config {
     }
 
     public static Solver solver = Solver.CDCL_Chaff;
-    public static Logging logging = Logging.NONE;
+    public static Logging logging = Logging.VERBOSE;
 }

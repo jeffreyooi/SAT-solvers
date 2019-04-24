@@ -17,6 +17,10 @@ abstract class Solver implements ISolver {
     private ResultOutput resultOutput;
     private CSVLogger logger;
 
+    public void reset() {
+        pickBranchingVariableCount = 0;
+    }
+
     public void setResultOutput(String outputPath) throws IOException {
         resultOutput = new ResultOutput(outputPath);
         resultOutput.initialize();

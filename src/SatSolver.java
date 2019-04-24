@@ -97,7 +97,7 @@ public class SatSolver {
         try {
             if (args.length >= 4) {
                 solver.setStatisticsOutput(args[3]);
-                solver.logStatistics(new String[]{"Iteration", "Time (s)"});
+                solver.logStatistics(new String[]{"Iteration", "Time (s)", "Pick Branching Variable count"});
             }
 
             if (args.length >= 5) {
@@ -118,7 +118,7 @@ public class SatSolver {
                 System.out.println(result);
             }
             try {
-                String[] stat = new String[]{String.valueOf(i + 1), SolverUtil.millisecToString(totalTime)};
+                String[] stat = new String[]{String.valueOf(i + 1), SolverUtil.millisecToString(totalTime), String.valueOf(solver.getPickBranchingVariableCount())};
                 solver.logStatistics(stat);
                 solver.writeResult(String.format("%d\n", i + 1));
                 solver.writeResult(result);

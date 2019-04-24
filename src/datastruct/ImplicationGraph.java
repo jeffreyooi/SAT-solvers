@@ -271,7 +271,7 @@ public class ImplicationGraph {
         unassignedVariables.toArray(variableNames);
         int index = 0;
         if (random) {
-            Random rand = new Random();
+            Random rand = new Random(System.currentTimeMillis());
             index = rand.nextInt(variableNames.length);
         }
         return new Variable(variableNames[index], true);
@@ -375,6 +375,14 @@ public class ImplicationGraph {
         unassignedVariables.clear();
         assignedVariables.clear();
         assignedNodes.clear();
+    }
+
+    /**
+     * Get assignment map.
+     * @return assignment map.
+     */
+    public Map<String, Boolean> getAssignments() {
+        return assignedVariables;
     }
 
     /**
